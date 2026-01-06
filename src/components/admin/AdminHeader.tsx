@@ -1,4 +1,5 @@
 import { Bell, Search, User } from 'lucide-react';
+import ThemeToggle from './ThemeToggle';
 
 interface AdminHeaderProps {
   title: string;
@@ -17,7 +18,7 @@ const AdminHeader = ({ title, subtitle }: AdminHeaderProps) => {
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2">
         {/* Search */}
         <div className="relative hidden md:block">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -28,6 +29,9 @@ const AdminHeader = ({ title, subtitle }: AdminHeaderProps) => {
           />
         </div>
 
+        {/* Theme Toggle */}
+        <ThemeToggle />
+
         {/* Notifications */}
         <button className="relative rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
           <Bell className="h-5 w-5" />
@@ -35,7 +39,7 @@ const AdminHeader = ({ title, subtitle }: AdminHeaderProps) => {
         </button>
 
         {/* User */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 ml-2">
           <div className="hidden text-right md:block">
             <p className="text-sm font-medium text-foreground">Admin</p>
             <p className="text-xs text-muted-foreground">Quản trị viên</p>
