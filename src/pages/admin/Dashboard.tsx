@@ -1,61 +1,104 @@
-import AdminHeader from '@/components/admin/AdminHeader';
-import StatCard from '@/components/admin/StatCard';
-import { Package, Users, FileText, Wallet, TrendingUp, ArrowRight } from 'lucide-react';
-import { mockThongKe, mockHoaDons, mockKhachHangs } from '@/data/mockData';
-import { formatCurrency, formatDate } from '@/utils/format';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from "react";
+import AdminHeader from "@/components/admin/AdminHeader";
+import StatCard from "@/components/admin/StatCard";
+import {
+  Package,
+  Users,
+  FileText,
+  Wallet,
+  TrendingUp,
+  ArrowRight,
+} from "lucide-react";
+import { Link } from "react-router-dom";
+import { formatCurrency, formatDate } from "@/utils/format";
+import { dashboardService } from "@/services/dashboard.service";
+import { DashboardTongQuan, HoaDonCanThu, KhachHangCongNoCao } from "@/types";
+import { useToast } from "@/hooks/use-toast";
 
 const Dashboard = () => {
-  // Lấy 5 hóa đơn gần nhất còn nợ
-  const hoaDonGanNhat = mockHoaDons
-    .filter(hd => hd.conNo > 0)
-    .slice(0, 5);
+  const { toast } = useToast();
 
-  // Lấy khách hàng có công nợ
-  const khachHangCongNo = mockKhachHangs
-    .filter(kh => kh.congNoHienTai > 0)
-    .sort((a, b) => b.congNoHienTai - a.congNoHienTai)
-    .slice(0, 5);
+  const [data, setData] = useState<DashboardTongQuan | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const loadDashboard = async () => {
+    try {
+      const res = await dashboardService.tongQuan();
+      setData(res.data);
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: err || "Không thể tải dữ liệu dashboard",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadDashboard();
+  }, []);
+
+  if (loading) {
+    return <div className="p-6">Đang tải dashboard...</div>;
+  }
+
+  if (!data) {
+    return <div className="p-6">Không có dữ liệu</div>;
+  }
 
   return (
     <div className="min-h-screen">
-      <AdminHeader 
-        title="Dashboard" 
+      <AdminHeader
+        title="Dashboard"
         subtitle="Tổng quan hệ thống quản lý gạch"
       />
 
       <div className="p-4 lg:p-6">
-        {/* Stats Grid */}
+        {/* ===== STAT CARDS ===== */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           <StatCard
             title="Tổng sản phẩm"
-            value={mockThongKe.tongSanPham}
+            value={data.tongSanPham}
             icon={Package}
-            trend={{ value: 12, isPositive: true }}
+            trend={{
+              value: data.phanTram.sanPham,
+              isPositive: data.phanTram.sanPham >= 0,
+            }}
           />
+
           <StatCard
             title="Khách hàng"
-            value={mockThongKe.tongKhachHang}
+            value={data.tongKhachHang}
             icon={Users}
-            trend={{ value: 8, isPositive: true }}
+            trend={{
+              value: data.phanTram.khachHang,
+              isPositive: data.phanTram.khachHang >= 0,
+            }}
           />
+
           <StatCard
             title="Hóa đơn tháng này"
-            value={mockThongKe.tongHoaDon}
+            value={data.hoaDonThangNay}
             icon={FileText}
-            trend={{ value: 5, isPositive: true }}
+            trend={{
+              value: data.phanTram.hoaDon,
+              isPositive: data.phanTram.hoaDon >= 0,
+            }}
           />
+
           <StatCard
             title="Tổng công nợ"
-            value={formatCurrency(mockThongKe.tongCongNo)}
+            value={formatCurrency(data.tongCongNo)}
             icon={Wallet}
             variant="primary"
           />
         </div>
 
-        {/* Content Grid */}
+        {/* ===== CONTENT ===== */}
         <div className="mt-8 grid gap-6 lg:grid-cols-2">
-          {/* Hóa đơn cần thu */}
+          {/* ===== HÓA ĐƠN CẦN THU ===== */}
           <div className="admin-card">
             <div className="admin-card-header flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -70,12 +113,12 @@ const Dashboard = () => {
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
+
             <div className="admin-card-body p-0">
-              {/* Desktop Table */}
               <div className="hidden md:block">
                 <table className="w-full">
                   <thead>
-                    <tr className="table-header border-b border-border">
+                    <tr className="border-b">
                       <th className="px-6 py-3 text-left">Mã HĐ</th>
                       <th className="px-6 py-3 text-left">Ngày giao</th>
                       <th className="px-6 py-3 text-right">Còn nợ</th>
@@ -83,8 +126,8 @@ const Dashboard = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {hoaDonGanNhat.map((hd) => (
-                      <tr key={hd._id} className="table-row-hover border-b border-border last:border-0">
+                    {data.hoaDonCanThu.map((hd: HoaDonCanThu) => (
+                      <tr key={hd._id} className="border-b">
                         <td className="px-6 py-4 font-medium">{hd.maHoaDon}</td>
                         <td className="px-6 py-4 text-muted-foreground">
                           {formatDate(hd.ngayGiao)}
@@ -95,12 +138,14 @@ const Dashboard = () => {
                         <td className="px-6 py-4 text-center">
                           <span
                             className={
-                              hd.trangThai === 'CHUA_THU'
-                                ? 'badge-danger'
-                                : 'badge-warning'
+                              hd.trangThai === "CHUA_THU"
+                                ? "badge-danger"
+                                : "badge-warning"
                             }
                           >
-                            {hd.trangThai === 'CHUA_THU' ? 'Chưa thu' : 'Thu 1 phần'}
+                            {hd.trangThai === "CHUA_THU"
+                              ? "Chưa thu"
+                              : "Thu 1 phần"}
                           </span>
                         </td>
                       </tr>
@@ -108,31 +153,10 @@ const Dashboard = () => {
                   </tbody>
                 </table>
               </div>
-              {/* Mobile Cards */}
-              <div className="md:hidden divide-y divide-border">
-                {hoaDonGanNhat.map((hd) => (
-                  <div key={hd._id} className="p-4 flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{hd.maHoaDon}</p>
-                      <p className="text-sm text-muted-foreground">{formatDate(hd.ngayGiao)}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-medium text-destructive">{formatCurrency(hd.conNo)}</p>
-                      <span
-                        className={`text-xs ${
-                          hd.trangThai === 'CHUA_THU' ? 'badge-danger' : 'badge-warning'
-                        }`}
-                      >
-                        {hd.trangThai === 'CHUA_THU' ? 'Chưa thu' : 'Thu 1 phần'}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
 
-          {/* Khách hàng công nợ cao */}
+          {/* ===== KHÁCH HÀNG CÔNG NỢ CAO ===== */}
           <div className="admin-card">
             <div className="admin-card-header flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -147,23 +171,22 @@ const Dashboard = () => {
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
+
             <div className="admin-card-body p-0">
-              {/* Desktop Table */}
               <div className="hidden md:block">
                 <table className="w-full">
                   <thead>
-                    <tr className="table-header border-b border-border">
+                    <tr className="border-b">
                       <th className="px-6 py-3 text-left">Khách hàng</th>
                       <th className="px-6 py-3 text-left">SĐT</th>
                       <th className="px-6 py-3 text-right">Công nợ</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {khachHangCongNo.map((kh) => (
-                      <tr key={kh._id} className="table-row-hover border-b border-border last:border-0">
-                        <td className="px-6 py-4">
-                          <p className="font-medium">{kh.tenKhachHang}</p>
-                          <p className="text-sm text-muted-foreground">{kh.maKhachHang}</p>
+                    {data.khachHangCongNoCao.map((kh: KhachHangCongNoCao) => (
+                      <tr key={kh._id} className="border-b">
+                        <td className="px-6 py-4 font-medium">
+                          {kh.tenKhachHang}
                         </td>
                         <td className="px-6 py-4 text-muted-foreground">
                           {kh.soDienThoai}
@@ -175,18 +198,6 @@ const Dashboard = () => {
                     ))}
                   </tbody>
                 </table>
-              </div>
-              {/* Mobile Cards */}
-              <div className="md:hidden divide-y divide-border">
-                {khachHangCongNo.map((kh) => (
-                  <div key={kh._id} className="p-4 flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{kh.tenKhachHang}</p>
-                      <p className="text-sm text-muted-foreground">{kh.soDienThoai}</p>
-                    </div>
-                    <p className="font-semibold text-destructive">{formatCurrency(kh.congNoHienTai)}</p>
-                  </div>
-                ))}
               </div>
             </div>
           </div>
