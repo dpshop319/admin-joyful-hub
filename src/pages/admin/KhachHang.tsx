@@ -118,10 +118,10 @@ const KhachHangPage = () => {
     <div className="min-h-screen">
       <AdminHeader title="Khách hàng" subtitle="Quản lý danh sách khách hàng và công nợ" />
 
-      <div className="p-6">
+      <div className="p-4 lg:p-6">
         {/* Action bar */}
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5 text-primary" />
               <span className="text-muted-foreground">{khachHangs.length} khách hàng</span>
@@ -130,17 +130,17 @@ const KhachHangPage = () => {
               placeholder="Tìm kiếm..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-64"
+              className="w-full sm:w-64"
             />
           </div>
-          <Button onClick={openAddDialog} className="gap-2">
+          <Button onClick={openAddDialog} className="gap-2 w-full sm:w-auto">
             <Plus className="h-4 w-4" />
             Thêm khách hàng
           </Button>
         </div>
 
-        {/* Table */}
-        <div className="admin-card overflow-hidden">
+        {/* Desktop Table */}
+        <div className="hidden md:block admin-card overflow-hidden">
           <table className="w-full">
             <thead>
               <tr className="table-header border-b border-border">
@@ -201,6 +201,57 @@ const KhachHangPage = () => {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Cards */}
+        <div className="md:hidden space-y-3">
+          {filteredKhachHangs.map((kh) => (
+            <div key={kh._id} className="rounded-lg border bg-card p-4 space-y-3">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="font-semibold">{kh.tenKhachHang}</p>
+                  <p className="text-sm text-muted-foreground">{kh.maKhachHang}</p>
+                </div>
+                <button
+                  onClick={() => toggleTrangThai(kh._id)}
+                  className={kh.trangThai === 'HOAT_DONG' ? 'badge-success' : 'badge-danger'}
+                >
+                  {kh.trangThai === 'HOAT_DONG' ? 'Hoạt động' : 'Ngừng'}
+                </button>
+              </div>
+              <div className="text-sm space-y-1">
+                <p className="flex items-center gap-2 text-muted-foreground">
+                  <Phone className="h-4 w-4" />
+                  {kh.soDienThoai}
+                </p>
+                <p className="flex items-center gap-2 text-muted-foreground">
+                  <MapPin className="h-4 w-4" />
+                  <span className="line-clamp-1">{kh.diaChi}</span>
+                </p>
+              </div>
+              <div className="flex items-center justify-between pt-2 border-t">
+                <div>
+                  <p className="text-sm text-muted-foreground">Công nợ</p>
+                  <p className={`font-semibold ${kh.congNoHienTai > 0 ? 'text-destructive' : 'text-success'}`}>
+                    {formatCurrency(kh.congNoHienTai)}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => openEditDialog(kh)}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-destructive hover:text-destructive"
+                    onClick={() => { setDeletingId(kh._id); setIsDeleteDialogOpen(true); }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 

@@ -109,21 +109,21 @@ const NhaMayPage = () => {
     <div className="min-h-screen">
       <AdminHeader title="Nhà máy" subtitle="Quản lý danh sách nhà máy cung cấp gạch" />
 
-      <div className="p-6">
+      <div className="p-4 lg:p-6">
         {/* Action bar */}
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-2">
             <Factory className="h-5 w-5 text-primary" />
             <span className="text-muted-foreground">{nhaMays.length} nhà máy</span>
           </div>
-          <Button onClick={openAddDialog} className="gap-2">
+          <Button onClick={openAddDialog} className="gap-2 w-full sm:w-auto">
             <Plus className="h-4 w-4" />
             Thêm nhà máy
           </Button>
         </div>
 
-        {/* Table */}
-        <div className="admin-card overflow-hidden">
+        {/* Desktop Table */}
+        <div className="hidden md:block admin-card overflow-hidden">
           <table className="w-full">
             <thead>
               <tr className="table-header border-b border-border">
@@ -179,6 +179,51 @@ const NhaMayPage = () => {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Cards */}
+        <div className="md:hidden space-y-3">
+          {nhaMays.map((nm) => (
+            <div key={nm._id} className="rounded-lg border bg-card p-4 space-y-3">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="font-semibold">{nm.tenNhaMay}</p>
+                  <p className="text-sm text-muted-foreground">{nm.maNhaMay}</p>
+                </div>
+                <button
+                  onClick={() => toggleTrangThai(nm._id)}
+                  className={nm.trangThai === 'HOAT_DONG' ? 'badge-success' : 'badge-danger'}
+                >
+                  {nm.trangThai === 'HOAT_DONG' ? 'Hoạt động' : 'Ngừng'}
+                </button>
+              </div>
+              <div className="text-sm space-y-1">
+                <p className="flex items-center gap-2 text-muted-foreground">
+                  <MapPin className="h-4 w-4" />
+                  {nm.diaChi}
+                </p>
+                <p className="flex items-center gap-2 text-muted-foreground">
+                  <Phone className="h-4 w-4" />
+                  {nm.soDienThoai}
+                </p>
+              </div>
+              <div className="flex justify-end gap-2 pt-2 border-t">
+                <Button variant="outline" size="sm" onClick={() => openEditDialog(nm)}>
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Sửa
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-destructive hover:text-destructive"
+                  onClick={() => { setDeletingId(nm._id); setIsDeleteDialogOpen(true); }}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Xóa
+                </Button>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 

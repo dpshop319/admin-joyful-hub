@@ -24,7 +24,7 @@ const Dashboard = () => {
         subtitle="Tổng quan hệ thống quản lý gạch"
       />
 
-      <div className="p-6">
+      <div className="p-4 lg:p-6">
         {/* Stats Grid */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           <StatCard
@@ -71,40 +71,64 @@ const Dashboard = () => {
               </Link>
             </div>
             <div className="admin-card-body p-0">
-              <table className="w-full">
-                <thead>
-                  <tr className="table-header border-b border-border">
-                    <th className="px-6 py-3 text-left">Mã HĐ</th>
-                    <th className="px-6 py-3 text-left">Ngày giao</th>
-                    <th className="px-6 py-3 text-right">Còn nợ</th>
-                    <th className="px-6 py-3 text-center">Trạng thái</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {hoaDonGanNhat.map((hd) => (
-                    <tr key={hd._id} className="table-row-hover border-b border-border last:border-0">
-                      <td className="px-6 py-4 font-medium">{hd.maHoaDon}</td>
-                      <td className="px-6 py-4 text-muted-foreground">
-                        {formatDate(hd.ngayGiao)}
-                      </td>
-                      <td className="px-6 py-4 text-right font-medium text-destructive">
-                        {formatCurrency(hd.conNo)}
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <span
-                          className={
-                            hd.trangThai === 'CHUA_THU'
-                              ? 'badge-danger'
-                              : 'badge-warning'
-                          }
-                        >
-                          {hd.trangThai === 'CHUA_THU' ? 'Chưa thu' : 'Thu 1 phần'}
-                        </span>
-                      </td>
+              {/* Desktop Table */}
+              <div className="hidden md:block">
+                <table className="w-full">
+                  <thead>
+                    <tr className="table-header border-b border-border">
+                      <th className="px-6 py-3 text-left">Mã HĐ</th>
+                      <th className="px-6 py-3 text-left">Ngày giao</th>
+                      <th className="px-6 py-3 text-right">Còn nợ</th>
+                      <th className="px-6 py-3 text-center">Trạng thái</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {hoaDonGanNhat.map((hd) => (
+                      <tr key={hd._id} className="table-row-hover border-b border-border last:border-0">
+                        <td className="px-6 py-4 font-medium">{hd.maHoaDon}</td>
+                        <td className="px-6 py-4 text-muted-foreground">
+                          {formatDate(hd.ngayGiao)}
+                        </td>
+                        <td className="px-6 py-4 text-right font-medium text-destructive">
+                          {formatCurrency(hd.conNo)}
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <span
+                            className={
+                              hd.trangThai === 'CHUA_THU'
+                                ? 'badge-danger'
+                                : 'badge-warning'
+                            }
+                          >
+                            {hd.trangThai === 'CHUA_THU' ? 'Chưa thu' : 'Thu 1 phần'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {/* Mobile Cards */}
+              <div className="md:hidden divide-y divide-border">
+                {hoaDonGanNhat.map((hd) => (
+                  <div key={hd._id} className="p-4 flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">{hd.maHoaDon}</p>
+                      <p className="text-sm text-muted-foreground">{formatDate(hd.ngayGiao)}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium text-destructive">{formatCurrency(hd.conNo)}</p>
+                      <span
+                        className={`text-xs ${
+                          hd.trangThai === 'CHUA_THU' ? 'badge-danger' : 'badge-warning'
+                        }`}
+                      >
+                        {hd.trangThai === 'CHUA_THU' ? 'Chưa thu' : 'Thu 1 phần'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -124,31 +148,46 @@ const Dashboard = () => {
               </Link>
             </div>
             <div className="admin-card-body p-0">
-              <table className="w-full">
-                <thead>
-                  <tr className="table-header border-b border-border">
-                    <th className="px-6 py-3 text-left">Khách hàng</th>
-                    <th className="px-6 py-3 text-left">SĐT</th>
-                    <th className="px-6 py-3 text-right">Công nợ</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {khachHangCongNo.map((kh) => (
-                    <tr key={kh._id} className="table-row-hover border-b border-border last:border-0">
-                      <td className="px-6 py-4">
-                        <p className="font-medium">{kh.tenKhachHang}</p>
-                        <p className="text-sm text-muted-foreground">{kh.maKhachHang}</p>
-                      </td>
-                      <td className="px-6 py-4 text-muted-foreground">
-                        {kh.soDienThoai}
-                      </td>
-                      <td className="px-6 py-4 text-right font-semibold text-destructive">
-                        {formatCurrency(kh.congNoHienTai)}
-                      </td>
+              {/* Desktop Table */}
+              <div className="hidden md:block">
+                <table className="w-full">
+                  <thead>
+                    <tr className="table-header border-b border-border">
+                      <th className="px-6 py-3 text-left">Khách hàng</th>
+                      <th className="px-6 py-3 text-left">SĐT</th>
+                      <th className="px-6 py-3 text-right">Công nợ</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {khachHangCongNo.map((kh) => (
+                      <tr key={kh._id} className="table-row-hover border-b border-border last:border-0">
+                        <td className="px-6 py-4">
+                          <p className="font-medium">{kh.tenKhachHang}</p>
+                          <p className="text-sm text-muted-foreground">{kh.maKhachHang}</p>
+                        </td>
+                        <td className="px-6 py-4 text-muted-foreground">
+                          {kh.soDienThoai}
+                        </td>
+                        <td className="px-6 py-4 text-right font-semibold text-destructive">
+                          {formatCurrency(kh.congNoHienTai)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {/* Mobile Cards */}
+              <div className="md:hidden divide-y divide-border">
+                {khachHangCongNo.map((kh) => (
+                  <div key={kh._id} className="p-4 flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">{kh.tenKhachHang}</p>
+                      <p className="text-sm text-muted-foreground">{kh.soDienThoai}</p>
+                    </div>
+                    <p className="font-semibold text-destructive">{formatCurrency(kh.congNoHienTai)}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>

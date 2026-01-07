@@ -223,17 +223,17 @@ const HoaDonPage = () => {
           </Button>
         </div>
 
-        {/* Table */}
-        <div className="rounded-lg border bg-card overflow-x-auto">
+        {/* Desktop Table */}
+        <div className="hidden md:block rounded-lg border bg-card overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Mã HĐ</TableHead>
-                <TableHead className="hidden md:table-cell">Khách hàng</TableHead>
-                <TableHead className="hidden sm:table-cell">Ngày giao</TableHead>
+                <TableHead>Khách hàng</TableHead>
+                <TableHead>Ngày giao</TableHead>
                 <TableHead className="text-right">Tổng tiền</TableHead>
                 <TableHead className="text-right hidden lg:table-cell">Đã thu</TableHead>
-                <TableHead className="text-right hidden sm:table-cell">Còn nợ</TableHead>
+                <TableHead className="text-right">Còn nợ</TableHead>
                 <TableHead>Trạng thái</TableHead>
                 <TableHead className="text-right">Thao tác</TableHead>
               </TableRow>
@@ -245,11 +245,11 @@ const HoaDonPage = () => {
                 return (
                   <TableRow key={hd._id}>
                     <TableCell className="font-medium">{hd.maHoaDon}</TableCell>
-                    <TableCell className="hidden md:table-cell">{khachHang?.tenKhachHang}</TableCell>
-                    <TableCell className="hidden sm:table-cell">{formatDate(hd.ngayGiao)}</TableCell>
+                    <TableCell>{khachHang?.tenKhachHang}</TableCell>
+                    <TableCell>{formatDate(hd.ngayGiao)}</TableCell>
                     <TableCell className="text-right">{formatCurrency(hd.tongTien)}</TableCell>
                     <TableCell className="text-right hidden lg:table-cell">{formatCurrency(hd.daThu)}</TableCell>
-                    <TableCell className="text-right hidden sm:table-cell text-destructive font-medium">
+                    <TableCell className="text-right text-destructive font-medium">
                       {formatCurrency(hd.conNo)}
                     </TableCell>
                     <TableCell>
@@ -265,6 +265,49 @@ const HoaDonPage = () => {
               })}
             </TableBody>
           </Table>
+        </div>
+
+        {/* Mobile Cards */}
+        <div className="md:hidden space-y-3">
+          {filteredHoaDons.map((hd) => {
+            const khachHang = mockKhachHangs.find(kh => kh._id === hd.khachHangId);
+            const { label, variant } = getTrangThaiLabel(hd.trangThai);
+            return (
+              <div key={hd._id} className="rounded-lg border bg-card p-4 space-y-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="font-semibold">{hd.maHoaDon}</p>
+                    <p className="text-sm text-muted-foreground">{khachHang?.tenKhachHang}</p>
+                  </div>
+                  <Badge variant={variant}>{label}</Badge>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Ngày giao</p>
+                    <p className="font-medium">{formatDate(hd.ngayGiao)}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-muted-foreground">Tổng tiền</p>
+                    <p className="font-medium">{formatCurrency(hd.tongTien)}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Đã thu</p>
+                    <p className="font-medium text-green-600">{formatCurrency(hd.daThu)}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-muted-foreground">Còn nợ</p>
+                    <p className="font-medium text-destructive">{formatCurrency(hd.conNo)}</p>
+                  </div>
+                </div>
+                <div className="flex justify-end pt-2 border-t">
+                  <Button variant="outline" size="sm" onClick={() => handleView(hd)}>
+                    <Eye className="h-4 w-4 mr-2" />
+                    Xem chi tiết
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 

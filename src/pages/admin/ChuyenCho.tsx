@@ -145,17 +145,17 @@ const ChuyenChoPage = () => {
           </Select>
         </div>
 
-        {/* Table */}
-        <div className="rounded-lg border bg-card overflow-x-auto">
+        {/* Desktop Table */}
+        <div className="hidden md:block rounded-lg border bg-card overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Mã chuyến</TableHead>
-                <TableHead className="hidden md:table-cell">Hóa đơn</TableHead>
+                <TableHead>Hóa đơn</TableHead>
                 <TableHead className="hidden lg:table-cell">Nhà máy</TableHead>
-                <TableHead className="hidden sm:table-cell">Khách hàng</TableHead>
+                <TableHead>Khách hàng</TableHead>
                 <TableHead>Ngày chuyển</TableHead>
-                <TableHead className="text-right hidden md:table-cell">Số lượng</TableHead>
+                <TableHead className="text-right">Số lượng</TableHead>
                 <TableHead>Trạng thái</TableHead>
                 <TableHead className="text-right">Thao tác</TableHead>
               </TableRow>
@@ -169,11 +169,11 @@ const ChuyenChoPage = () => {
                 return (
                   <TableRow key={cc._id}>
                     <TableCell className="font-medium">{cc.maChuyenCho}</TableCell>
-                    <TableCell className="hidden md:table-cell">{hoaDon?.maHoaDon}</TableCell>
+                    <TableCell>{hoaDon?.maHoaDon}</TableCell>
                     <TableCell className="hidden lg:table-cell">{nhaMay?.tenNhaMay}</TableCell>
-                    <TableCell className="hidden sm:table-cell">{khachHang?.tenKhachHang}</TableCell>
+                    <TableCell>{khachHang?.tenKhachHang}</TableCell>
                     <TableCell>{formatDate(cc.ngayChuyen)}</TableCell>
-                    <TableCell className="text-right hidden md:table-cell">{getTongSoLuong(cc)} SP</TableCell>
+                    <TableCell className="text-right">{getTongSoLuong(cc)} SP</TableCell>
                     <TableCell>
                       <Badge variant={variant}>{label}</Badge>
                     </TableCell>
@@ -209,6 +209,71 @@ const ChuyenChoPage = () => {
               })}
             </TableBody>
           </Table>
+        </div>
+
+        {/* Mobile Cards */}
+        <div className="md:hidden space-y-3">
+          {filteredChuyenChos.map((cc) => {
+            const khachHang = mockKhachHangs.find(kh => kh._id === cc.khachHangId);
+            const nhaMay = mockNhaMays.find(nm => nm._id === cc.nhaMayId);
+            const hoaDon = mockHoaDons.find(hd => hd._id === cc.hoaDonId);
+            const { label, variant } = getTrangThaiLabel(cc.trangThai);
+            return (
+              <div key={cc._id} className="rounded-lg border bg-card p-4 space-y-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="font-semibold">{cc.maChuyenCho}</p>
+                    <p className="text-sm text-muted-foreground">{hoaDon?.maHoaDon}</p>
+                  </div>
+                  <Badge variant={variant}>{label}</Badge>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Khách hàng</p>
+                    <p className="font-medium">{khachHang?.tenKhachHang}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-muted-foreground">Nhà máy</p>
+                    <p className="font-medium">{nhaMay?.tenNhaMay}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Ngày chuyển</p>
+                    <p className="font-medium">{formatDate(cc.ngayChuyen)}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-muted-foreground">Số lượng</p>
+                    <p className="font-medium">{getTongSoLuong(cc)} SP</p>
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2 pt-2 border-t">
+                  {cc.trangThai === 'CHO_GIAO' && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => handleUpdateTrangThai(cc._id, 'DANG_GIAO')}
+                    >
+                      <Truck className="h-4 w-4 mr-2 text-blue-600" />
+                      Bắt đầu giao
+                    </Button>
+                  )}
+                  {cc.trangThai === 'DANG_GIAO' && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => handleUpdateTrangThai(cc._id, 'DA_GIAO')}
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
+                      Hoàn thành
+                    </Button>
+                  )}
+                  <Button variant="outline" size="sm" onClick={() => handleView(cc)}>
+                    <Eye className="h-4 w-4 mr-2" />
+                    Chi tiết
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
