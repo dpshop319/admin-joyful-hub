@@ -9,12 +9,25 @@ export interface KhachHang {
   congNoHienTai: number;
 }
 
+// Chi tiết hóa đơn
+export interface ChiTietHoaDon {
+  sanPhamId: string;
+  tenSanPham: string;
+  kichThuoc: string;
+  soLuong: number;
+  donGia: number;
+  thanhTien: number;
+}
+
 // Hóa đơn
 export interface HoaDon {
   _id: string;
   maHoaDon: string;
   khachHangId: string;
+  nhaMayId: string;
   ngayGiao: string;
+  diaChiGiao: string;
+  chiTiet: ChiTietHoaDon[];
   tongTien: number;
   daThu: number;
   conNo: number;
@@ -58,6 +71,19 @@ export interface SanPham {
   giaBanMacDinh: number;
   nhaMayId: string;
   hienThi: boolean;
+}
+
+// Chuyến chở
+export interface ChuyenCho {
+  _id: string;
+  maChuyenCho: string;
+  hoaDonId: string;
+  nhaMayId: string;
+  khachHangId: string;
+  ngayChuyen: string;
+  diaChiGiao: string;
+  chiTiet: ChiTietHoaDon[];
+  trangThai: 'CHO_GIAO' | 'DANG_GIAO' | 'DA_GIAO';
 }
 
 // Thống kê Dashboard

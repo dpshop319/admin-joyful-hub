@@ -10,6 +10,7 @@ import {
   LogOut,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import ThemeToggle from './ThemeToggle';
 
 const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
@@ -21,7 +22,11 @@ const menuItems = [
   { icon: Truck, label: 'Chuyến chở', path: '/admin/chuyen-cho' },
 ];
 
-const AdminSidebar = () => {
+interface AdminSidebarProps {
+  onNavigate?: () => void;
+}
+
+const AdminSidebar = ({ onNavigate }: AdminSidebarProps) => {
   const location = useLocation();
 
   const isActive = (path: string) => {
@@ -32,7 +37,7 @@ const AdminSidebar = () => {
   };
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-sidebar">
+    <aside className="lg:fixed left-0 top-0 z-40 h-screen w-64 bg-sidebar flex flex-col">
       {/* Logo */}
       <div className="flex h-16 items-center border-b border-sidebar-border px-6">
         <div className="flex items-center gap-3">
@@ -49,7 +54,7 @@ const AdminSidebar = () => {
       </div>
 
       {/* Navigation */}
-      <nav className="flex flex-col gap-1 p-4">
+      <nav className="flex-1 flex flex-col gap-1 p-4 overflow-y-auto">
         {menuItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.path);
@@ -58,6 +63,7 @@ const AdminSidebar = () => {
             <Link
               key={item.path}
               to={item.path}
+              onClick={onNavigate}
               className={cn(
                 'flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-all',
                 active
@@ -73,7 +79,11 @@ const AdminSidebar = () => {
       </nav>
 
       {/* Footer */}
-      <div className="absolute bottom-0 left-0 right-0 border-t border-sidebar-border p-4">
+      <div className="border-t border-sidebar-border p-4 space-y-2">
+        <div className="flex items-center justify-between px-4 py-2">
+          <span className="text-sm text-sidebar-foreground/70">Giao diện</span>
+          <ThemeToggle />
+        </div>
         <button className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-sidebar-foreground/70 transition-all hover:bg-sidebar-accent/50 hover:text-sidebar-foreground">
           <LogOut className="h-5 w-5" />
           Đăng xuất

@@ -12,7 +12,8 @@ import ThuTien from "./pages/admin/ThuTien";
 import NhaMay from "./pages/admin/NhaMay";
 import KhachHang from "./pages/admin/KhachHang";
 import SanPham from "./pages/admin/SanPham";
-import ComingSoon from "./pages/admin/ComingSoon";
+import HoaDon from "./pages/admin/HoaDon";
+import ChuyenCho from "./pages/admin/ChuyenCho";
 
 const queryClient = new QueryClient();
 
@@ -32,9 +33,9 @@ const App = () => (
               <Route path="nha-may" element={<NhaMay />} />
               <Route path="san-pham" element={<SanPham />} />
               <Route path="khach-hang" element={<KhachHang />} />
-              <Route path="hoa-don" element={<ComingSoon title="Hóa đơn" />} />
+              <Route path="hoa-don" element={<HoaDon />} />
               <Route path="thu-tien" element={<ThuTien />} />
-              <Route path="chuyen-cho" element={<ComingSoon title="Chuyến chở" />} />
+              <Route path="chuyen-cho" element={<ChuyenCho />} />
             </Route>
 
             {/* Catch-all */}
