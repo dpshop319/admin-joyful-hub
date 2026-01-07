@@ -151,7 +151,7 @@ const ThuTien = () => {
         subtitle="Tạo phiếu thu và phân bổ thanh toán cho hóa đơn"
       />
 
-      <div className="p-6">
+      <div className="p-4 lg:p-6">
         <div className="mx-auto max-w-4xl">
           {/* Form tạo phiếu thu */}
           <div className="admin-card animate-fade-in">
@@ -188,14 +188,17 @@ const ThuTien = () => {
               {/* Thông tin khách hàng */}
               {selectedKhachHang && (
                 <div className="rounded-lg bg-muted/50 p-4 animate-fade-in">
-                  <div className="flex items-start justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                     <div>
                       <p className="font-medium">{selectedKhachHang.tenKhachHang}</p>
                       <p className="text-sm text-muted-foreground">
-                        {selectedKhachHang.soDienThoai} • {selectedKhachHang.diaChi}
+                        {selectedKhachHang.soDienThoai}
+                      </p>
+                      <p className="text-sm text-muted-foreground line-clamp-1">
+                        {selectedKhachHang.diaChi}
                       </p>
                     </div>
-                    <div className="text-right">
+                    <div className="sm:text-right">
                       <p className="text-sm text-muted-foreground">Công nợ hiện tại</p>
                       <p className="text-xl font-bold text-destructive">
                         {formatCurrency(selectedKhachHang.congNoHienTai)}
@@ -224,69 +227,128 @@ const ThuTien = () => {
                       </p>
                     </div>
                   ) : (
-                    <div className="overflow-hidden rounded-lg border border-border">
-                      <table className="w-full">
-                        <thead>
-                          <tr className="table-header border-b border-border">
-                            <th className="w-12 px-4 py-3"></th>
-                            <th className="px-4 py-3 text-left">Mã hóa đơn</th>
-                            <th className="px-4 py-3 text-left">Ngày giao</th>
-                            <th className="px-4 py-3 text-right">Tổng tiền</th>
-                            <th className="px-4 py-3 text-right">Đã thu</th>
-                            <th className="px-4 py-3 text-right">Còn nợ</th>
-                            <th className="w-48 px-4 py-3 text-right">Thu lần này</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {hoaDonConNo.map((hd) => {
-                            const isSelected = selectedHoaDons.has(hd._id);
-                            const soTienDaNhap = phanBo[hd._id] || 0;
+                    <>
+                      {/* Desktop Table */}
+                      <div className="hidden md:block overflow-hidden rounded-lg border border-border">
+                        <table className="w-full">
+                          <thead>
+                            <tr className="table-header border-b border-border">
+                              <th className="w-12 px-4 py-3"></th>
+                              <th className="px-4 py-3 text-left">Mã hóa đơn</th>
+                              <th className="px-4 py-3 text-left">Ngày giao</th>
+                              <th className="px-4 py-3 text-right">Tổng tiền</th>
+                              <th className="px-4 py-3 text-right">Đã thu</th>
+                              <th className="px-4 py-3 text-right">Còn nợ</th>
+                              <th className="w-48 px-4 py-3 text-right">Thu lần này</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {hoaDonConNo.map((hd) => {
+                              const isSelected = selectedHoaDons.has(hd._id);
+                              const soTienDaNhap = phanBo[hd._id] || 0;
 
-                            return (
-                              <tr
-                                key={hd._id}
-                                className={`table-row-hover border-b border-border last:border-0 ${
-                                  isSelected ? 'bg-primary/5' : ''
-                                }`}
-                              >
-                                <td className="px-4 py-3 text-center">
-                                  <Checkbox
-                                    checked={isSelected}
-                                    onCheckedChange={() => toggleHoaDon(hd._id)}
-                                  />
-                                </td>
-                                <td className="px-4 py-3 font-medium">{hd.maHoaDon}</td>
-                                <td className="px-4 py-3 text-muted-foreground">
-                                  {formatDate(hd.ngayGiao)}
-                                </td>
-                                <td className="px-4 py-3 text-right">
-                                  {formatCurrency(hd.tongTien)}
-                                </td>
-                                <td className="px-4 py-3 text-right text-success">
-                                  {formatCurrency(hd.daThu)}
-                                </td>
-                                <td className="px-4 py-3 text-right font-medium text-destructive">
-                                  {formatCurrency(hd.conNo)}
-                                </td>
-                                <td className="px-4 py-3">
-                                  {isSelected ? (
-                                    <Input
-                                      type="text"
-                                      value={soTienDaNhap > 0 ? formatNumber(soTienDaNhap) : ''}
-                                      onChange={(e) => updatePhanBo(hd._id, e.target.value)}
-                                      placeholder="Nhập số tiền"
-                                      className="input-currency text-right"
+                              return (
+                                <tr
+                                  key={hd._id}
+                                  className={`table-row-hover border-b border-border last:border-0 ${
+                                    isSelected ? 'bg-primary/5' : ''
+                                  }`}
+                                >
+                                  <td className="px-4 py-3 text-center">
+                                    <Checkbox
+                                      checked={isSelected}
+                                      onCheckedChange={() => toggleHoaDon(hd._id)}
                                     />
-                                  ) : (
-                                    <div className="h-10" />
+                                  </td>
+                                  <td className="px-4 py-3 font-medium">{hd.maHoaDon}</td>
+                                  <td className="px-4 py-3 text-muted-foreground">
+                                    {formatDate(hd.ngayGiao)}
+                                  </td>
+                                  <td className="px-4 py-3 text-right">
+                                    {formatCurrency(hd.tongTien)}
+                                  </td>
+                                  <td className="px-4 py-3 text-right text-success">
+                                    {formatCurrency(hd.daThu)}
+                                  </td>
+                                  <td className="px-4 py-3 text-right font-medium text-destructive">
+                                    {formatCurrency(hd.conNo)}
+                                  </td>
+                                  <td className="px-4 py-3">
+                                    {isSelected ? (
+                                      <Input
+                                        type="text"
+                                        value={soTienDaNhap > 0 ? formatNumber(soTienDaNhap) : ''}
+                                        onChange={(e) => updatePhanBo(hd._id, e.target.value)}
+                                        placeholder="Nhập số tiền"
+                                        className="input-currency text-right"
+                                      />
+                                    ) : (
+                                      <div className="h-10" />
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Mobile Cards */}
+                      <div className="md:hidden space-y-3">
+                        {hoaDonConNo.map((hd) => {
+                          const isSelected = selectedHoaDons.has(hd._id);
+                          const soTienDaNhap = phanBo[hd._id] || 0;
+
+                          return (
+                            <div
+                              key={hd._id}
+                              className={`rounded-lg border p-4 space-y-3 ${
+                                isSelected ? 'bg-primary/5 border-primary/30' : 'bg-card'
+                              }`}
+                            >
+                              <div className="flex items-start gap-3">
+                                <Checkbox
+                                  checked={isSelected}
+                                  onCheckedChange={() => toggleHoaDon(hd._id)}
+                                  className="mt-1"
+                                />
+                                <div className="flex-1">
+                                  <div className="flex items-start justify-between">
+                                    <div>
+                                      <p className="font-semibold">{hd.maHoaDon}</p>
+                                      <p className="text-sm text-muted-foreground">{formatDate(hd.ngayGiao)}</p>
+                                    </div>
+                                    <p className="font-medium text-destructive">{formatCurrency(hd.conNo)}</p>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-2 mt-2 text-sm">
+                                    <div>
+                                      <span className="text-muted-foreground">Tổng: </span>
+                                      <span className="font-medium">{formatCurrency(hd.tongTien)}</span>
+                                    </div>
+                                    <div className="text-right">
+                                      <span className="text-muted-foreground">Đã thu: </span>
+                                      <span className="font-medium text-green-600">{formatCurrency(hd.daThu)}</span>
+                                    </div>
+                                  </div>
+                                  {isSelected && (
+                                    <div className="mt-3 pt-3 border-t">
+                                      <label className="text-sm font-medium mb-1 block">Thu lần này</label>
+                                      <Input
+                                        type="text"
+                                        value={soTienDaNhap > 0 ? formatNumber(soTienDaNhap) : ''}
+                                        onChange={(e) => updatePhanBo(hd._id, e.target.value)}
+                                        placeholder="Nhập số tiền"
+                                        className="input-currency text-right"
+                                      />
+                                    </div>
                                   )}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
                   )}
                 </div>
               )}
@@ -306,7 +368,7 @@ const ThuTien = () => {
 
               {/* Tổng kết và xác nhận */}
               {selectedKhachHang && hoaDonConNo.length > 0 && (
-                <div className="flex items-center justify-between rounded-lg bg-muted/50 p-4 animate-fade-in">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-lg bg-muted/50 p-4 animate-fade-in">
                   <div>
                     <p className="text-sm text-muted-foreground">Tổng tiền thu</p>
                     <p className="text-2xl font-bold text-primary">
@@ -316,6 +378,7 @@ const ThuTien = () => {
                   <div className="flex gap-3">
                     <Button
                       variant="outline"
+                      className="flex-1 sm:flex-none"
                       onClick={() => {
                         setSelectedKhachHang(null);
                         setHoaDonConNo([]);
@@ -329,10 +392,11 @@ const ThuTien = () => {
                     <Button
                       onClick={handleXacNhan}
                       disabled={tongTienThu === 0}
-                      className="gap-2"
+                      className="gap-2 flex-1 sm:flex-none"
                     >
                       <CheckCircle className="h-4 w-4" />
-                      Xác nhận thu tiền
+                      <span className="hidden sm:inline">Xác nhận thu tiền</span>
+                      <span className="sm:hidden">Xác nhận</span>
                     </Button>
                   </div>
                 </div>

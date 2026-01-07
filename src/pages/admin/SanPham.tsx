@@ -135,33 +135,35 @@ const SanPhamPage = () => {
     <div className="min-h-screen">
       <AdminHeader title="Sản phẩm" subtitle="Quản lý danh sách gạch và giá bán" />
 
-      <div className="p-6">
+      <div className="p-4 lg:p-6">
         {/* Action bar */}
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap items-center gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
             <div className="flex items-center gap-2">
               <Package className="h-5 w-5 text-primary" />
               <span className="text-muted-foreground">{sanPhams.length} sản phẩm</span>
             </div>
-            <Input
-              placeholder="Tìm kiếm..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-48"
-            />
-            <Select value={filterNhaMay} onValueChange={setFilterNhaMay}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Lọc theo nhà máy" />
-              </SelectTrigger>
-              <SelectContent className="bg-popover">
-                <SelectItem value="all">Tất cả nhà máy</SelectItem>
-                {mockNhaMays.map(nm => (
-                  <SelectItem key={nm._id} value={nm._id}>{nm.tenNhaMay}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex gap-2 flex-1 sm:flex-none">
+              <Input
+                placeholder="Tìm kiếm..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="flex-1 sm:w-40"
+              />
+              <Select value={filterNhaMay} onValueChange={setFilterNhaMay}>
+                <SelectTrigger className="w-full sm:w-40">
+                  <SelectValue placeholder="Nhà máy" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover">
+                  <SelectItem value="all">Tất cả</SelectItem>
+                  {mockNhaMays.map(nm => (
+                    <SelectItem key={nm._id} value={nm._id}>{nm.tenNhaMay}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          <Button onClick={openAddDialog} className="gap-2">
+          <Button onClick={openAddDialog} className="gap-2 w-full sm:w-auto">
             <Plus className="h-4 w-4" />
             Thêm sản phẩm
           </Button>
