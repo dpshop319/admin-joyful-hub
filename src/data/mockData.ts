@@ -1,4 +1,4 @@
-import { KhachHang, HoaDon, NhaMay, SanPham, ThongKe } from '@/types';
+import { KhachHang, HoaDon, NhaMay, SanPham, ThongKe, ChuyenCho } from '@/types';
 
 // Mock Khách hàng
 export const mockKhachHangs: KhachHang[] = [
@@ -46,17 +46,28 @@ export const mockHoaDons: HoaDon[] = [
     _id: 'hd001',
     maHoaDon: 'HD20260115-001',
     khachHangId: 'kh001',
+    nhaMayId: 'nm001',
     ngayGiao: '2026-01-15',
-    tongTien: 25000000,
+    diaChiGiao: '123 Nguyễn Văn Linh, Q.7, TP.HCM',
+    chiTiet: [
+      { sanPhamId: 'sp001', tenSanPham: 'Gạch lát nền 60x60 vân đá', kichThuoc: '60x60', soLuong: 100, donGia: 185000, thanhTien: 18500000 },
+      { sanPhamId: 'sp002', tenSanPham: 'Gạch ốp tường 30x60 trắng', kichThuoc: '30x60', soLuong: 45, donGia: 145000, thanhTien: 6525000 },
+    ],
+    tongTien: 25025000,
     daThu: 10000000,
-    conNo: 15000000,
+    conNo: 15025000,
     trangThai: 'THU_MOT_PHAN',
   },
   {
     _id: 'hd002',
     maHoaDon: 'HD20260118-002',
     khachHangId: 'kh001',
+    nhaMayId: 'nm002',
     ngayGiao: '2026-01-18',
+    diaChiGiao: '123 Nguyễn Văn Linh, Q.7, TP.HCM',
+    chiTiet: [
+      { sanPhamId: 'sp003', tenSanPham: 'Gạch lát nền 80x80 vân gỗ', kichThuoc: '80x80', soLuong: 120, donGia: 250000, thanhTien: 30000000 },
+    ],
     tongTien: 30000000,
     daThu: 0,
     conNo: 30000000,
@@ -66,7 +77,12 @@ export const mockHoaDons: HoaDon[] = [
     _id: 'hd003',
     maHoaDon: 'HD20260110-001',
     khachHangId: 'kh002',
+    nhaMayId: 'nm001',
     ngayGiao: '2026-01-10',
+    diaChiGiao: '456 Lê Lợi, Q.1, TP.HCM',
+    chiTiet: [
+      { sanPhamId: 'sp001', tenSanPham: 'Gạch lát nền 60x60 vân đá', kichThuoc: '60x60', soLuong: 100, donGia: 185000, thanhTien: 18500000 },
+    ],
     tongTien: 18500000,
     daThu: 0,
     conNo: 18500000,
@@ -76,17 +92,27 @@ export const mockHoaDons: HoaDon[] = [
     _id: 'hd004',
     maHoaDon: 'HD20260112-002',
     khachHangId: 'kh002',
+    nhaMayId: 'nm002',
     ngayGiao: '2026-01-12',
-    tongTien: 10000000,
-    daThu: 0,
+    diaChiGiao: '456 Lê Lợi, Q.1, TP.HCM',
+    chiTiet: [
+      { sanPhamId: 'sp002', tenSanPham: 'Gạch ốp tường 30x60 trắng', kichThuoc: '30x60', soLuong: 70, donGia: 145000, thanhTien: 10150000 },
+    ],
+    tongTien: 10150000,
+    daThu: 150000,
     conNo: 10000000,
-    trangThai: 'CHUA_THU',
+    trangThai: 'THU_MOT_PHAN',
   },
   {
     _id: 'hd005',
     maHoaDon: 'HD20260105-001',
     khachHangId: 'kh004',
+    nhaMayId: 'nm001',
     ngayGiao: '2026-01-05',
+    diaChiGiao: '321 Điện Biên Phủ, Q.3, TP.HCM',
+    chiTiet: [
+      { sanPhamId: 'sp003', tenSanPham: 'Gạch lát nền 80x80 vân gỗ', kichThuoc: '80x80', soLuong: 48, donGia: 250000, thanhTien: 12000000 },
+    ],
     tongTien: 12000000,
     daThu: 0,
     conNo: 12000000,
@@ -142,6 +168,63 @@ export const mockSanPhams: SanPham[] = [
     giaBanMacDinh: 250000,
     nhaMayId: 'nm002',
     hienThi: true,
+  },
+];
+
+// Mock Chuyến chở
+export const mockChuyenChos: ChuyenCho[] = [
+  {
+    _id: 'cc001',
+    maChuyenCho: 'CC20260115-001',
+    hoaDonId: 'hd001',
+    nhaMayId: 'nm001',
+    khachHangId: 'kh001',
+    ngayChuyen: '2026-01-15',
+    diaChiGiao: '123 Nguyễn Văn Linh, Q.7, TP.HCM',
+    chiTiet: [
+      { sanPhamId: 'sp001', tenSanPham: 'Gạch lát nền 60x60 vân đá', kichThuoc: '60x60', soLuong: 100, donGia: 185000, thanhTien: 18500000 },
+      { sanPhamId: 'sp002', tenSanPham: 'Gạch ốp tường 30x60 trắng', kichThuoc: '30x60', soLuong: 45, donGia: 145000, thanhTien: 6525000 },
+    ],
+    trangThai: 'DA_GIAO',
+  },
+  {
+    _id: 'cc002',
+    maChuyenCho: 'CC20260118-001',
+    hoaDonId: 'hd002',
+    nhaMayId: 'nm002',
+    khachHangId: 'kh001',
+    ngayChuyen: '2026-01-18',
+    diaChiGiao: '123 Nguyễn Văn Linh, Q.7, TP.HCM',
+    chiTiet: [
+      { sanPhamId: 'sp003', tenSanPham: 'Gạch lát nền 80x80 vân gỗ', kichThuoc: '80x80', soLuong: 120, donGia: 250000, thanhTien: 30000000 },
+    ],
+    trangThai: 'DANG_GIAO',
+  },
+  {
+    _id: 'cc003',
+    maChuyenCho: 'CC20260110-001',
+    hoaDonId: 'hd003',
+    nhaMayId: 'nm001',
+    khachHangId: 'kh002',
+    ngayChuyen: '2026-01-10',
+    diaChiGiao: '456 Lê Lợi, Q.1, TP.HCM',
+    chiTiet: [
+      { sanPhamId: 'sp001', tenSanPham: 'Gạch lát nền 60x60 vân đá', kichThuoc: '60x60', soLuong: 100, donGia: 185000, thanhTien: 18500000 },
+    ],
+    trangThai: 'DA_GIAO',
+  },
+  {
+    _id: 'cc004',
+    maChuyenCho: 'CC20260120-001',
+    hoaDonId: 'hd004',
+    nhaMayId: 'nm002',
+    khachHangId: 'kh002',
+    ngayChuyen: '2026-01-20',
+    diaChiGiao: '456 Lê Lợi, Q.1, TP.HCM',
+    chiTiet: [
+      { sanPhamId: 'sp002', tenSanPham: 'Gạch ốp tường 30x60 trắng', kichThuoc: '30x60', soLuong: 70, donGia: 145000, thanhTien: 10150000 },
+    ],
+    trangThai: 'CHO_GIAO',
   },
 ];
 
