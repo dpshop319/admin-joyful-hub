@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,18 +19,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { mockNhaMays } from '@/data/mockData';
 import { NhaMay } from '@/types';
-import { Factory, Plus, Pencil, Trash2, Phone, MapPin } from 'lucide-react';
+import { nhaMayService } from '@/services/nhaMay.service';
+import { Factory, Plus, Pencil, Trash2, Phone, MapPin, Loader2, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const NhaMayPage = () => {
   const { toast } = useToast();
-  const [nhaMays, setNhaMays] = useState<NhaMay[]>(mockNhaMays);
+  const [nhaMays, setNhaMays] = useState<NhaMay[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingNhaMay, setEditingNhaMay] = useState<NhaMay | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const [form, setForm] = useState({
     maNhaMay: '',
@@ -39,6 +41,22 @@ const NhaMayPage = () => {
     soDienThoai: '',
   });
 
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const res = await nhaMayService.danhSach();
+      setNhaMays(res.data || []);
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Lỗi', description: err || 'Không thể tải danh sách' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
   const resetForm = () => {
     setForm({ maNhaMay: '', tenNhaMay: '', diaChi: '', soDienThoai: '' });
     setEditingNhaMay(null);
@@ -46,7 +64,6 @@ const NhaMayPage = () => {
 
   const openAddDialog = () => {
     resetForm();
-    setForm(prev => ({ ...prev, maNhaMay: `NM${String(nhaMays.length + 1).padStart(3, '0')}` }));
     setIsDialogOpen(true);
   };
 
@@ -55,68 +72,90 @@ const NhaMayPage = () => {
     setForm({
       maNhaMay: nhaMay.maNhaMay,
       tenNhaMay: nhaMay.tenNhaMay,
-      diaChi: nhaMay.diaChi,
-      soDienThoai: nhaMay.soDienThoai,
+      diaChi: nhaMay.diaChi || '',
+      soDienThoai: nhaMay.soDienThoai || '',
     });
     setIsDialogOpen(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.tenNhaMay.trim()) {
       toast({ variant: 'destructive', title: 'Lỗi', description: 'Vui lòng nhập tên nhà máy' });
       return;
     }
 
-    if (editingNhaMay) {
-      setNhaMays(prev => prev.map(nm => 
-        nm._id === editingNhaMay._id 
-          ? { ...nm, ...form }
-          : nm
-      ));
-      toast({ title: 'Thành công', description: 'Đã cập nhật nhà máy' });
-    } else {
-      const newNhaMay: NhaMay = {
-        _id: `nm${Date.now()}`,
-        ...form,
-        trangThai: 'HOAT_DONG',
-      };
-      setNhaMays(prev => [...prev, newNhaMay]);
-      toast({ title: 'Thành công', description: 'Đã thêm nhà máy mới' });
+    try {
+      setSaving(true);
+      if (editingNhaMay) {
+        await nhaMayService.capNhat(editingNhaMay._id, form);
+        toast({ title: 'Thành công', description: 'Đã cập nhật nhà máy' });
+      } else {
+        await nhaMayService.tao(form);
+        toast({ title: 'Thành công', description: 'Đã thêm nhà máy mới' });
+      }
+      setIsDialogOpen(false);
+      resetForm();
+      loadData();
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Lỗi', description: err || 'Không thể lưu' });
+    } finally {
+      setSaving(false);
     }
-
-    setIsDialogOpen(false);
-    resetForm();
   };
 
-  const handleDelete = () => {
-    if (deletingId) {
-      setNhaMays(prev => prev.filter(nm => nm._id !== deletingId));
+  const handleDelete = async () => {
+    if (!deletingId) return;
+    try {
+      await nhaMayService.xoa(deletingId);
       toast({ title: 'Thành công', description: 'Đã xóa nhà máy' });
+      loadData();
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Lỗi', description: err || 'Không thể xóa' });
+    } finally {
+      setIsDeleteDialogOpen(false);
+      setDeletingId(null);
     }
-    setIsDeleteDialogOpen(false);
-    setDeletingId(null);
   };
 
-  const toggleTrangThai = (id: string) => {
-    setNhaMays(prev => prev.map(nm => 
-      nm._id === id 
-        ? { ...nm, trangThai: nm.trangThai === 'HOAT_DONG' ? 'NGUNG_HOP_TAC' : 'HOAT_DONG' }
-        : nm
-    ));
+  const toggleTrangThai = async (nm: NhaMay) => {
+    try {
+      await nhaMayService.capNhat(nm._id, {
+        trangThai: nm.trangThai === 'HOAT_DONG' ? 'NGUNG_HOP_TAC' : 'HOAT_DONG'
+      });
+      loadData();
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Lỗi', description: err });
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen">
+        <AdminHeader title="Nhà máy" subtitle="Quản lý danh sách nhà máy cung cấp gạch" />
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
       <AdminHeader title="Nhà máy" subtitle="Quản lý danh sách nhà máy cung cấp gạch" />
 
-      <div className="p-4 lg:p-6">
+      <div className="p-4 lg:p-8">
         {/* Action bar */}
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <Factory className="h-5 w-5 text-primary" />
-            <span className="text-muted-foreground">{nhaMays.length} nhà máy</span>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10">
+              <Factory className="h-5 w-5 text-primary" />
+              <span className="font-semibold text-primary">{nhaMays.length} nhà máy</span>
+            </div>
+            <Button variant="ghost" size="icon" onClick={loadData}>
+              <RefreshCw className="h-4 w-4" />
+            </Button>
           </div>
-          <Button onClick={openAddDialog} className="gap-2 w-full sm:w-auto">
+          <Button onClick={openAddDialog} className="gap-2 shadow-lg shadow-primary/25">
             <Plus className="h-4 w-4" />
             Thêm nhà máy
           </Button>
@@ -138,37 +177,39 @@ const NhaMayPage = () => {
             <tbody>
               {nhaMays.map((nm) => (
                 <tr key={nm._id} className="table-row-hover border-b border-border last:border-0">
-                  <td className="px-6 py-4 font-medium">{nm.maNhaMay}</td>
-                  <td className="px-6 py-4 font-medium">{nm.tenNhaMay}</td>
+                  <td className="px-6 py-4">
+                    <span className="px-2 py-1 rounded bg-muted text-sm font-mono">{nm.maNhaMay}</span>
+                  </td>
+                  <td className="px-6 py-4 font-semibold">{nm.tenNhaMay}</td>
                   <td className="px-6 py-4 text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <MapPin className="h-4 w-4" />
-                      {nm.diaChi}
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 flex-shrink-0" />
+                      <span className="line-clamp-1">{nm.diaChi}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4 text-muted-foreground">
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-2">
                       <Phone className="h-4 w-4" />
                       {nm.soDienThoai}
                     </div>
                   </td>
                   <td className="px-6 py-4 text-center">
                     <button
-                      onClick={() => toggleTrangThai(nm._id)}
+                      onClick={() => toggleTrangThai(nm)}
                       className={nm.trangThai === 'HOAT_DONG' ? 'badge-success' : 'badge-danger'}
                     >
                       {nm.trangThai === 'HOAT_DONG' ? 'Hoạt động' : 'Ngừng hợp tác'}
                     </button>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex items-center justify-center gap-2">
+                    <div className="flex items-center justify-center gap-1">
                       <Button variant="ghost" size="icon" onClick={() => openEditDialog(nm)}>
                         <Pencil className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="text-destructive hover:text-destructive"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
                         onClick={() => { setDeletingId(nm._id); setIsDeleteDialogOpen(true); }}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -184,30 +225,30 @@ const NhaMayPage = () => {
         {/* Mobile Cards */}
         <div className="md:hidden space-y-3">
           {nhaMays.map((nm) => (
-            <div key={nm._id} className="rounded-lg border bg-card p-4 space-y-3">
+            <div key={nm._id} className="admin-card p-4 space-y-3 animate-fade-in">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="font-semibold">{nm.tenNhaMay}</p>
-                  <p className="text-sm text-muted-foreground">{nm.maNhaMay}</p>
+                  <p className="font-bold text-lg">{nm.tenNhaMay}</p>
+                  <p className="text-sm text-muted-foreground font-mono">{nm.maNhaMay}</p>
                 </div>
                 <button
-                  onClick={() => toggleTrangThai(nm._id)}
+                  onClick={() => toggleTrangThai(nm)}
                   className={nm.trangThai === 'HOAT_DONG' ? 'badge-success' : 'badge-danger'}
                 >
                   {nm.trangThai === 'HOAT_DONG' ? 'Hoạt động' : 'Ngừng'}
                 </button>
               </div>
-              <div className="text-sm space-y-1">
+              <div className="text-sm space-y-2">
                 <p className="flex items-center gap-2 text-muted-foreground">
-                  <MapPin className="h-4 w-4" />
-                  {nm.diaChi}
+                  <MapPin className="h-4 w-4 flex-shrink-0" />
+                  <span className="line-clamp-1">{nm.diaChi}</span>
                 </p>
                 <p className="flex items-center gap-2 text-muted-foreground">
                   <Phone className="h-4 w-4" />
                   {nm.soDienThoai}
                 </p>
               </div>
-              <div className="flex justify-end gap-2 pt-2 border-t">
+              <div className="flex justify-end gap-2 pt-3 border-t">
                 <Button variant="outline" size="sm" onClick={() => openEditDialog(nm)}>
                   <Pencil className="h-4 w-4 mr-2" />
                   Sửa
@@ -225,25 +266,34 @@ const NhaMayPage = () => {
             </div>
           ))}
         </div>
+
+        {nhaMays.length === 0 && (
+          <div className="empty-state">
+            <Factory className="h-16 w-16 text-muted-foreground/30 mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Chưa có nhà máy nào</h3>
+            <p className="text-muted-foreground mb-4">Thêm nhà máy đầu tiên để bắt đầu</p>
+            <Button onClick={openAddDialog}>
+              <Plus className="h-4 w-4 mr-2" />
+              Thêm nhà máy
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Add/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="bg-card">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{editingNhaMay ? 'Sửa nhà máy' : 'Thêm nhà máy mới'}</DialogTitle>
+            <DialogTitle className="text-xl">{editingNhaMay ? 'Sửa nhà máy' : 'Thêm nhà máy mới'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Mã nhà máy</label>
-              <Input value={form.maNhaMay} disabled className="bg-muted" />
-            </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Tên nhà máy *</label>
               <Input
                 value={form.tenNhaMay}
                 onChange={(e) => setForm(prev => ({ ...prev, tenNhaMay: e.target.value }))}
                 placeholder="Nhập tên nhà máy"
+                className="h-11"
               />
             </div>
             <div className="space-y-2">
@@ -252,6 +302,7 @@ const NhaMayPage = () => {
                 value={form.diaChi}
                 onChange={(e) => setForm(prev => ({ ...prev, diaChi: e.target.value }))}
                 placeholder="Nhập địa chỉ"
+                className="h-11"
               />
             </div>
             <div className="space-y-2">
@@ -260,19 +311,22 @@ const NhaMayPage = () => {
                 value={form.soDienThoai}
                 onChange={(e) => setForm(prev => ({ ...prev, soDienThoai: e.target.value }))}
                 placeholder="Nhập số điện thoại"
+                className="h-11"
               />
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Hủy</Button>
-            <Button onClick={handleSave}>{editingNhaMay ? 'Cập nhật' : 'Thêm mới'}</Button>
+            <Button onClick={handleSave} disabled={saving} className="min-w-24">
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editingNhaMay ? 'Cập nhật' : 'Thêm mới'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Delete Confirmation */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent className="bg-card">
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Xác nhận xóa?</AlertDialogTitle>
             <AlertDialogDescription>
