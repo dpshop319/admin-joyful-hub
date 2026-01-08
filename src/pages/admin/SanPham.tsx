@@ -1,295 +1,291 @@
-import { useState } from 'react';
-import AdminHeader from '@/components/admin/AdminHeader';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useEffect, useState } from "react";
+import AdminHeader from "@/components/admin/AdminHeader";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import {
-  Select,
+  Select as ShadcnSelect,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { mockSanPhams, mockNhaMays } from '@/data/mockData';
-import { SanPham } from '@/types';
-import { Package, Plus, Pencil, Trash2, Eye, EyeOff } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { formatCurrency, parseCurrency, formatNumber } from '@/utils/format';
+} from "@/components/ui/select";
+import { Modal, Form, Input as AntInput, Select, Popconfirm } from "antd";
+import { SanPham, NhaMay } from "@/types";
+import { sanPhamService } from "@/services/sanPham.service";
+import { nhaMayService } from "@/services/nhaMay.service";
+import {
+  Package,
+  Plus,
+  Pencil,
+  Trash2,
+  Eye,
+  EyeOff,
+  Loader2,
+  RefreshCw,
+  Search,
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { formatCurrency, parseCurrency, formatNumber } from "@/utils/format";
 
 const SanPhamPage = () => {
   const { toast } = useToast();
-  const [sanPhams, setSanPhams] = useState<SanPham[]>(mockSanPhams);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [formAnt] = Form.useForm();
+
+  const [sanPhams, setSanPhams] = useState<SanPham[]>([]);
+  const [nhaMays, setNhaMays] = useState<NhaMay[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSanPham, setEditingSanPham] = useState<SanPham | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterNhaMay, setFilterNhaMay] = useState<string>('all');
 
-  const [form, setForm] = useState({
-    maSanPham: '',
-    tenSanPham: '',
-    kichThuoc: '',
-    giaBanMacDinh: 0,
-    nhaMayId: '',
-  });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterNhaMay, setFilterNhaMay] = useState("all");
+  const [saving, setSaving] = useState(false);
 
-  const resetForm = () => {
-    setForm({ maSanPham: '', tenSanPham: '', kichThuoc: '', giaBanMacDinh: 0, nhaMayId: '' });
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [spRes, nmRes] = await Promise.all([
+        sanPhamService.danhSach(),
+        nhaMayService.danhSach(),
+      ]);
+      setSanPhams(spRes.data || []);
+      setNhaMays(nmRes.data || []);
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Lỗi", description: err });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const openAddModal = () => {
     setEditingSanPham(null);
+    formAnt.resetFields();
+    setIsModalOpen(true);
   };
 
-  const openAddDialog = () => {
-    resetForm();
-    setForm(prev => ({ ...prev, maSanPham: `SP${String(sanPhams.length + 1).padStart(3, '0')}` }));
-    setIsDialogOpen(true);
-  };
-
-  const openEditDialog = (sp: SanPham) => {
+  const openEditModal = (sp: SanPham) => {
     setEditingSanPham(sp);
-    setForm({
-      maSanPham: sp.maSanPham,
+    formAnt.setFieldsValue({
       tenSanPham: sp.tenSanPham,
       kichThuoc: sp.kichThuoc,
-      giaBanMacDinh: sp.giaBanMacDinh,
-      nhaMayId: sp.nhaMayId,
+      giaBanMacDinh: formatNumber(sp.giaBanMacDinh),
+      nhaMayId: sp.nhaMayId._id,
     });
-    setIsDialogOpen(true);
+    setIsModalOpen(true);
   };
 
-  const handleSave = () => {
-    if (!form.tenSanPham.trim()) {
-      toast({ variant: 'destructive', title: 'Lỗi', description: 'Vui lòng nhập tên sản phẩm' });
-      return;
-    }
-    if (!form.nhaMayId) {
-      toast({ variant: 'destructive', title: 'Lỗi', description: 'Vui lòng chọn nhà máy' });
-      return;
-    }
+  const handleSave = async () => {
+    try {
+      const values = await formAnt.validateFields();
+      setSaving(true);
 
-    if (editingSanPham) {
-      setSanPhams(prev => prev.map(sp => 
-        sp._id === editingSanPham._id 
-          ? { ...sp, ...form }
-          : sp
-      ));
-      toast({ title: 'Thành công', description: 'Đã cập nhật sản phẩm' });
-    } else {
-      const newSanPham: SanPham = {
-        _id: `sp${Date.now()}`,
-        ...form,
-        hienThi: true,
+      const payload = {
+        ...values,
+        giaBanMacDinh: parseCurrency(values.giaBanMacDinh),
       };
-      setSanPhams(prev => [...prev, newSanPham]);
-      toast({ title: 'Thành công', description: 'Đã thêm sản phẩm mới' });
+
+      if (editingSanPham) {
+        await sanPhamService.capNhat(editingSanPham._id, payload);
+        toast({ title: "Thành công", description: "Đã cập nhật sản phẩm" });
+      } else {
+        await sanPhamService.tao(payload);
+        toast({ title: "Thành công", description: "Đã thêm sản phẩm mới" });
+      }
+
+      setIsModalOpen(false);
+      loadData();
+    } catch (err: any) {
+      if (err?.errorFields) return;
+      toast({ variant: "destructive", title: "Lỗi", description: err });
+    } finally {
+      setSaving(false);
     }
-
-    setIsDialogOpen(false);
-    resetForm();
   };
 
-  const handleDelete = () => {
-    if (deletingId) {
-      setSanPhams(prev => prev.filter(sp => sp._id !== deletingId));
-      toast({ title: 'Thành công', description: 'Đã xóa sản phẩm' });
-    }
-    setIsDeleteDialogOpen(false);
-    setDeletingId(null);
+  const toggleHienThi = async (sp: SanPham) => {
+    await sanPhamService.hienThi(sp._id, !sp.hienThi);
+    loadData();
   };
 
-  const toggleHienThi = (id: string) => {
-    setSanPhams(prev => prev.map(sp => 
-      sp._id === id ? { ...sp, hienThi: !sp.hienThi } : sp
-    ));
+  const handleDelete = async (id: string) => {
+    await sanPhamService.xoa(id);
+    toast({ title: "Thành công", description: "Đã xóa sản phẩm" });
+    loadData();
   };
 
-  const getNhaMayName = (nhaMayId: string) => {
-    const nm = mockNhaMays.find(n => n._id === nhaMayId);
-    return nm?.tenNhaMay || 'N/A';
-  };
-
-  const filteredSanPhams = sanPhams.filter(sp => {
-    const matchSearch = sp.tenSanPham.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  const filteredSanPhams = sanPhams.filter((sp) => {
+    const matchSearch =
+      sp.tenSanPham.toLowerCase().includes(searchTerm.toLowerCase()) ||
       sp.maSanPham.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchNhaMay = filterNhaMay === 'all' || sp.nhaMayId === filterNhaMay;
+    const matchNhaMay =
+      filterNhaMay === "all" || sp.nhaMayId._id === filterNhaMay;
     return matchSearch && matchNhaMay;
   });
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen">
-      <AdminHeader title="Sản phẩm" subtitle="Quản lý danh sách gạch và giá bán" />
+      <AdminHeader title="Sản phẩm" subtitle="Quản lý danh sách sản phẩm" />
 
-      <div className="p-4 lg:p-6">
-        {/* Action bar */}
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
-            <div className="flex items-center gap-2">
-              <Package className="h-5 w-5 text-primary" />
-              <span className="text-muted-foreground">{sanPhams.length} sản phẩm</span>
-            </div>
-            <div className="flex gap-2 flex-1 sm:flex-none">
-              <Input
-                placeholder="Tìm kiếm..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1 sm:w-40"
-              />
-              <Select value={filterNhaMay} onValueChange={setFilterNhaMay}>
-                <SelectTrigger className="w-full sm:w-40">
-                  <SelectValue placeholder="Nhà máy" />
-                </SelectTrigger>
-                <SelectContent className="bg-popover">
-                  <SelectItem value="all">Tất cả</SelectItem>
-                  {mockNhaMays.map(nm => (
-                    <SelectItem key={nm._id} value={nm._id}>{nm.tenNhaMay}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+      <div className="p-6">
+        <div className="mb-6 flex gap-4 justify-between">
+          <div className="flex gap-2">
+            <Input
+              placeholder="Tìm kiếm..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+
+            <ShadcnSelect value={filterNhaMay} onValueChange={setFilterNhaMay}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Nhà máy" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả</SelectItem>
+                {nhaMays.map((nm) => (
+                  <SelectItem key={nm._id} value={nm._id}>
+                    {nm.tenNhaMay}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </ShadcnSelect>
+
+            <Button variant="ghost" size="icon" onClick={loadData}>
+              <RefreshCw className="h-4 w-4" />
+            </Button>
           </div>
-          <Button onClick={openAddDialog} className="gap-2 w-full sm:w-auto">
-            <Plus className="h-4 w-4" />
+
+          <Button onClick={openAddModal}>
+            <Plus className="h-4 w-4 mr-2" />
             Thêm sản phẩm
           </Button>
         </div>
 
-        {/* Grid */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filteredSanPhams.map((sp) => (
-            <div key={sp._id} className="admin-card p-4 transition-all hover:shadow-md">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <p className="text-xs text-muted-foreground">{sp.maSanPham}</p>
-                  <h3 className="mt-1 font-semibold line-clamp-2">{sp.tenSanPham}</h3>
+            <div key={sp._id} className="admin-card p-4">
+              <div className="flex justify-between">
+                <div>
+                  <div className="text-xs font-mono">{sp.maSanPham}</div>
+                  <div className="font-bold">{sp.tenSanPham}</div>
                 </div>
-                <button
-                  onClick={() => toggleHienThi(sp._id)}
-                  className={`rounded-full p-1.5 ${sp.hienThi ? 'text-success' : 'text-muted-foreground'}`}
+                <Popconfirm
+                  title={sp.hienThi ? "Ẩn sản phẩm?" : "Hiển thị sản phẩm?"}
+                  description={
+                    sp.hienThi
+                      ? "Sản phẩm sẽ không còn hiển thị với khách hàng"
+                      : "Sản phẩm sẽ được hiển thị với khách hàng"
+                  }
+                  okText="Xác nhận"
+                  cancelText="Hủy"
+                  onConfirm={() => toggleHienThi(sp)}
                 >
-                  {sp.hienThi ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                </button>
-              </div>
-              
-              <div className="mt-3 space-y-1">
-                <p className="text-sm text-muted-foreground">Kích thước: {sp.kichThuoc}</p>
-                <p className="text-sm text-muted-foreground">Nhà máy: {getNhaMayName(sp.nhaMayId)}</p>
+                  <Button variant="ghost" size="icon">
+                    {sp.hienThi ? <Eye /> : <EyeOff />}
+                  </Button>
+                </Popconfirm>
               </div>
 
-              <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
-                <p className="text-lg font-bold text-primary">
+              <div className="mt-2 text-sm">
+                <div>Kích thước: {sp.kichThuoc}</div>
+                <div>Nhà máy: {sp.nhaMayId.tenNhaMay}</div>
+              </div>
+
+              <div className="mt-3 flex justify-between items-center">
+                <div className="font-bold text-primary">
                   {formatCurrency(sp.giaBanMacDinh)}
-                </p>
+                </div>
                 <div className="flex gap-1">
-                  <Button variant="ghost" size="icon" onClick={() => openEditDialog(sp)}>
-                    <Pencil className="h-4 w-4" />
-                  </Button>
                   <Button
-                    variant="ghost"
                     size="icon"
-                    className="text-destructive hover:text-destructive"
-                    onClick={() => { setDeletingId(sp._id); setIsDeleteDialogOpen(true); }}
+                    variant="ghost"
+                    onClick={() => openEditModal(sp)}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Pencil />
                   </Button>
+
+                  <Popconfirm
+                    title="Xóa sản phẩm?"
+                    description="Hành động này không thể hoàn tác"
+                    okText="Xóa"
+                    cancelText="Hủy"
+                    onConfirm={() => handleDelete(sp._id)}
+                  >
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="text-destructive"
+                    >
+                      <Trash2 />
+                    </Button>
+                  </Popconfirm>
                 </div>
               </div>
             </div>
           ))}
         </div>
       </div>
-
-      {/* Add/Edit Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="bg-card">
-          <DialogHeader>
-            <DialogTitle>{editingSanPham ? 'Sửa sản phẩm' : 'Thêm sản phẩm mới'}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Mã sản phẩm</label>
-              <Input value={form.maSanPham} disabled className="bg-muted" />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Tên sản phẩm *</label>
-              <Input
-                value={form.tenSanPham}
-                onChange={(e) => setForm(prev => ({ ...prev, tenSanPham: e.target.value }))}
-                placeholder="Nhập tên sản phẩm"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Kích thước</label>
-                <Input
-                  value={form.kichThuoc}
-                  onChange={(e) => setForm(prev => ({ ...prev, kichThuoc: e.target.value }))}
-                  placeholder="VD: 60x60"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Giá bán mặc định</label>
-                <Input
-                  value={form.giaBanMacDinh > 0 ? formatNumber(form.giaBanMacDinh) : ''}
-                  onChange={(e) => setForm(prev => ({ ...prev, giaBanMacDinh: parseCurrency(e.target.value) }))}
-                  placeholder="0"
-                  className="text-right"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Nhà máy *</label>
-              <Select value={form.nhaMayId} onValueChange={(v) => setForm(prev => ({ ...prev, nhaMayId: v }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn nhà máy" />
-                </SelectTrigger>
-                <SelectContent className="bg-popover">
-                  {mockNhaMays.filter(nm => nm.trangThai === 'HOAT_DONG').map(nm => (
-                    <SelectItem key={nm._id} value={nm._id}>{nm.tenNhaMay}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Hủy</Button>
-            <Button onClick={handleSave}>{editingSanPham ? 'Cập nhật' : 'Thêm mới'}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent className="bg-card">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Xác nhận xóa?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Hành động này không thể hoàn tác. Sản phẩm sẽ bị xóa vĩnh viễn.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Hủy</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Xóa
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <Modal
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        title={editingSanPham ? "Cập nhật sản phẩm" : "Thêm sản phẩm"}
+        onOk={handleSave}
+        confirmLoading={saving}
+        okText="Lưu"
+        cancelText="Hủy"
+      >
+        <Form form={formAnt} layout="vertical">
+          <Form.Item
+            name="tenSanPham"
+            label="Tên sản phẩm"
+            rules={[{ required: true, message: "Nhập tên sản phẩm" }]}
+          >
+            <AntInput />
+          </Form.Item>
+          <Form.Item
+            name="kichThuoc"
+            label="Kích thước"
+            rules={[{ required: true, message: "Nhập kích thước sản phẩm" }]}
+          >
+            <AntInput />
+          </Form.Item>
+          <Form.Item
+            name="giaBanMacDinh"
+            label="Giá bán"
+            rules={[{ required: true, message: "Nhập giá bán sản phẩm" }]}
+          >
+            <AntInput />
+          </Form.Item>
+          <Form.Item
+            name="nhaMayId"
+            label="Nhà máy"
+            rules={[{ required: true, message: "Chọn nhà máy" }]}
+          >
+            <Select>
+              {nhaMays
+                .filter((nm) => nm.dangHoatDong)
+                .map((nm) => (
+                  <Select.Option key={nm._id} value={nm._id}>
+                    {nm.tenNhaMay}
+                  </Select.Option>
+                ))}
+            </Select>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };

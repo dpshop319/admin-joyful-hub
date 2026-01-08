@@ -17,32 +17,33 @@ export interface KhachHang {
   ngayCapNhat?: string;
 }
 
-export type TrangThaiNhaMay = "HOAT_DONG" | "NGUNG_HOP_TAC";
 export interface NhaMay {
   _id: string;
   maNhaMay: string;
   tenNhaMay: string;
-  diaChi?: string;
-  soDienThoai?: string;
-  trangThai: TrangThaiNhaMay;
+  diaChi: string;
+  soDienThoai: string;
+  dangHoatDong: boolean;
   ngayTao?: string;
 }
-export interface SanPham {
+// sanPham.ts
+export type SanPham = {
   _id: string;
   maSanPham: string;
   tenSanPham: string;
   kichThuoc: string;
   giaBanMacDinh: number;
-  nhaMayId: string;
   hienThi: boolean;
-  ngayTao?: string;
-  ngayCapNhat?: string;
-}
+  nhaMayId: {
+    _id: string;
+    tenNhaMay: string;
+  };
+};
+
 export interface ChiTietHoaDon {
   sanPhamId: string;
   tenSanPham: string;
   kichThuoc: string;
-  nhaMayId: string;
   soLuong: number;
   donGia: number;
   thanhTien: number;
@@ -52,28 +53,29 @@ export type TrangThaiHoaDon = "CHUA_THU" | "THU_MOT_PHAN" | "DA_THU" | "HUY";
 export interface HoaDon {
   _id: string;
   maHoaDon: string;
-  ngayLap: string;
+  ngayLap?: string;
   ngayGiao: string;
   nhaMayId: string;
   khachHangId: string;
   diaChiGiao: string;
-  chiTietSanPhams: ChiTietHoaDon[];
-  tongTienHoaDon: number;
+  chiTiet: ChiTietHoaDon[];
+  tongTien: number;
   daThu: number;
   conNo: number;
   trangThai: TrangThaiHoaDon;
   ghiChu?: string;
-  daKhoa: boolean;
+  daKhoa?: boolean;
   ngayTao?: string;
   ngayCapNhat?: string;
 }
+
 export interface PhanBoHoaDon {
   hoaDonId: string;
   maHoaDon?: string;
-  tongTienHoaDon?: number;
-  conNoTruoc?: number;
-  soTien: number;
+  conNo?: number;
+  soTienThu: number;
 }
+
 export interface PhieuThu {
   _id: string;
   maPhieuThu: string;
@@ -112,9 +114,16 @@ export interface ChuyenCho {
   khachHangId: string;
   ngayChuyen: string;
   diaChiGiao: string;
-  danhSachGach: ChiTietHoaDon[];
+  chiTiet: ChiTietHoaDon[];
   trangThai: TrangThaiChuyenCho;
   ngayTao?: string;
+}
+
+export interface ThongKe {
+  tongSanPham: number;
+  tongKhachHang: number;
+  tongHoaDon: number;
+  tongCongNo: number;
 }
 
 export interface DashboardTongQuan {
@@ -136,7 +145,7 @@ export interface DashboardTongQuan {
 export interface HoaDonCanThu {
   _id: string;
   maHoaDon: string;
-  ngayGiao: string; // ISO date
+  ngayGiao: string;
   trangThai: "CHUA_THU" | "THU_MOT_PHAN";
   conNo: number;
 }

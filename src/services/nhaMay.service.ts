@@ -18,7 +18,7 @@ export const nhaMayService = {
     return axiosClient.delete(`/nha-may/${id}`);
   },
 
-  ngungHopTac(id: string) {
-    return axiosClient.patch(`/nha-may/${id}/ngung`);
+  toggleHopTac(id: string) {
+    return axiosClient.patch(`/nha-may/${id}/toggle-hop-tac`);
   },
 };

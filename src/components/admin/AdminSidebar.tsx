@@ -8,6 +8,7 @@ import {
   Wallet,
   Truck,
   LogOut,
+  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ThemeToggle from './ThemeToggle';
@@ -39,23 +40,26 @@ const AdminSidebar = ({ onNavigate }: AdminSidebarProps) => {
   return (
     <aside className="lg:fixed left-0 top-0 z-40 h-screen w-64 bg-sidebar flex flex-col">
       {/* Logo */}
-      <div className="flex h-16 items-center border-b border-sidebar-border px-6">
+      <div className="flex h-20 items-center border-b border-sidebar-border px-6">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sidebar-primary">
-            <Package className="h-5 w-5 text-sidebar-primary-foreground" />
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-sidebar-primary to-sidebar-primary/70 shadow-lg">
+            <Sparkles className="h-6 w-6 text-sidebar-primary-foreground" />
           </div>
           <div>
-            <h1 className="text-lg font-semibold text-sidebar-foreground">
+            <h1 className="text-xl font-bold text-sidebar-foreground tracking-tight">
               Gạch Việt
             </h1>
-            <p className="text-xs text-sidebar-foreground/60">Quản trị hệ thống</p>
+            <p className="text-xs text-sidebar-foreground/60 font-medium">Quản trị hệ thống</p>
           </div>
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 flex flex-col gap-1 p-4 overflow-y-auto">
-        {menuItems.map((item) => {
+      <nav className="flex-1 flex flex-col gap-1.5 p-4 overflow-y-auto scrollbar-thin">
+        <p className="px-4 py-2 text-xs font-semibold text-sidebar-foreground/40 uppercase tracking-wider">
+          Menu chính
+        </p>
+        {menuItems.map((item, index) => {
           const Icon = item.icon;
           const active = isActive(item.path);
           
@@ -65,14 +69,18 @@ const AdminSidebar = ({ onNavigate }: AdminSidebarProps) => {
               to={item.path}
               onClick={onNavigate}
               className={cn(
-                'flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-all',
+                'flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200',
                 active
-                  ? 'bg-sidebar-accent text-sidebar-primary'
-                  : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
+                  ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-lg shadow-sidebar-primary/25'
+                  : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'
               )}
+              style={{ animationDelay: `${index * 50}ms` }}
             >
               <Icon className="h-5 w-5" />
               {item.label}
+              {active && (
+                <div className="ml-auto h-2 w-2 rounded-full bg-sidebar-primary-foreground/80" />
+              )}
             </Link>
           );
         })}
@@ -80,11 +88,11 @@ const AdminSidebar = ({ onNavigate }: AdminSidebarProps) => {
 
       {/* Footer */}
       <div className="border-t border-sidebar-border p-4 space-y-2">
-        <div className="flex items-center justify-between px-4 py-2">
-          <span className="text-sm text-sidebar-foreground/70">Giao diện</span>
+        <div className="flex items-center justify-between px-4 py-2 rounded-lg bg-sidebar-accent/50">
+          <span className="text-sm text-sidebar-foreground/70 font-medium">Giao diện</span>
           <ThemeToggle />
         </div>
-        <button className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-sidebar-foreground/70 transition-all hover:bg-sidebar-accent/50 hover:text-sidebar-foreground">
+        <button className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-sidebar-foreground/70 transition-all hover:bg-destructive/10 hover:text-destructive">
           <LogOut className="h-5 w-5" />
           Đăng xuất
         </button>

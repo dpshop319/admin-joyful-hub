@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { KhachHang } from "@/types";
 import axiosClient from "./axiosClient";
 

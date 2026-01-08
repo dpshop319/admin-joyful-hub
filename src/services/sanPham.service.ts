@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { SanPham } from "@/types";
 import axiosClient from "./axiosClient";
 

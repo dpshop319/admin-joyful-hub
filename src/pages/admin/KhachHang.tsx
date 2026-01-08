@@ -1,320 +1,366 @@
-import { useState } from 'react';
-import AdminHeader from '@/components/admin/AdminHeader';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useEffect, useState } from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { mockKhachHangs } from '@/data/mockData';
-import { KhachHang } from '@/types';
-import { Users, Plus, Pencil, Trash2, Phone, MapPin } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { formatCurrency } from '@/utils/format';
+  Table,
+  Button as AntButton,
+  Modal,
+  Form,
+  Input,
+  message,
+  Tag,
+  Popconfirm,
+  Card,
+  Grid,
+} from "antd";
+import { Plus, Pencil, Trash2, RefreshCw } from "lucide-react";
+import AdminHeader from "@/components/admin/AdminHeader";
+import { KhachHang } from "@/types";
+import { khachHangService } from "@/services/khachHang.service";
+import { formatCurrency } from "@/utils/format";
+import "antd/dist/reset.css";
+
+const { useBreakpoint } = Grid;
+
+const normalize = (str = "") =>
+  str
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 
 const KhachHangPage = () => {
-  const { toast } = useToast();
-  const [khachHangs, setKhachHangs] = useState<KhachHang[]>(mockKhachHangs);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [editingKhachHang, setEditingKhachHang] = useState<KhachHang | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [data, setData] = useState<KhachHang[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editing, setEditing] = useState<KhachHang | null>(null);
+  const [search, setSearch] = useState("");
+  const [form] = Form.useForm();
 
-  const [form, setForm] = useState({
-    maKhachHang: '',
-    tenKhachHang: '',
-    diaChi: '',
-    soDienThoai: '',
-  });
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
 
-  const resetForm = () => {
-    setForm({ maKhachHang: '', tenKhachHang: '', diaChi: '', soDienThoai: '' });
-    setEditingKhachHang(null);
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const res: any = await khachHangService.danhSach();
+      setData(res.data || []);
+    } catch (err: any) {
+      message.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const openAddDialog = () => {
-    resetForm();
-    setForm(prev => ({ ...prev, maKhachHang: `KH${String(khachHangs.length + 1).padStart(3, '0')}` }));
-    setIsDialogOpen(true);
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const openAdd = () => {
+    setEditing(null);
+    form.resetFields();
+    setIsModalOpen(true);
   };
 
-  const openEditDialog = (kh: KhachHang) => {
-    setEditingKhachHang(kh);
-    setForm({
-      maKhachHang: kh.maKhachHang,
+  const openEdit = (kh: KhachHang) => {
+    setEditing(kh);
+    form.setFieldsValue({
       tenKhachHang: kh.tenKhachHang,
-      diaChi: kh.diaChi,
       soDienThoai: kh.soDienThoai,
+      diaChi: kh.diaChi,
     });
-    setIsDialogOpen(true);
+    setIsModalOpen(true);
   };
 
-  const handleSave = () => {
-    if (!form.tenKhachHang.trim()) {
-      toast({ variant: 'destructive', title: 'Lỗi', description: 'Vui lòng nhập tên khách hàng' });
-      return;
+  const handleSave = async () => {
+    try {
+      const values = await form.validateFields();
+      setSaving(true);
+
+      if (editing) {
+        const res: any = await khachHangService.capNhat(editing._id, values);
+        message.success(res?.message || "Cập nhật khách hàng thành công");
+      } else {
+        const res: any = await khachHangService.tao(values);
+        message.success(res?.message || "Thêm khách hàng thành công");
+      }
+
+      setIsModalOpen(false);
+      loadData();
+    } catch (err: any) {
+      if (err?.errorFields) return;
+      message.error(err);
+    } finally {
+      setSaving(false);
     }
+  };
 
-    if (editingKhachHang) {
-      setKhachHangs(prev => prev.map(kh => 
-        kh._id === editingKhachHang._id 
-          ? { ...kh, ...form }
-          : kh
-      ));
-      toast({ title: 'Thành công', description: 'Đã cập nhật khách hàng' });
-    } else {
-      const newKhachHang: KhachHang = {
-        _id: `kh${Date.now()}`,
-        ...form,
-        trangThai: 'HOAT_DONG',
-        congNoHienTai: 0,
-      };
-      setKhachHangs(prev => [...prev, newKhachHang]);
-      toast({ title: 'Thành công', description: 'Đã thêm khách hàng mới' });
+  /* ===================== ACTION ===================== */
+  const toggleTrangThai = async (kh: KhachHang) => {
+    try {
+      const res: any = await khachHangService.capNhat(kh._id, {
+        trangThai:
+          kh.trangThai === "HOAT_DONG" ? "NGUNG_GIAO_DICH" : "HOAT_DONG",
+      });
+      message.success(res?.message || "Cập nhật trạng thái thành công");
+      loadData();
+    } catch (err: any) {
+      message.error(err);
     }
-
-    setIsDialogOpen(false);
-    resetForm();
   };
 
-  const handleDelete = () => {
-    if (deletingId) {
-      setKhachHangs(prev => prev.filter(kh => kh._id !== deletingId));
-      toast({ title: 'Thành công', description: 'Đã xóa khách hàng' });
-    }
-    setIsDeleteDialogOpen(false);
-    setDeletingId(null);
+  /* ===================== SEARCH ===================== */
+  const filteredData = data.filter((kh) => {
+    const keyword = normalize(search);
+    return (
+      normalize(kh.tenKhachHang || "").includes(keyword) ||
+      normalize(kh.maKhachHang || "").includes(keyword) ||
+      kh.soDienThoai?.includes(search)
+    );
+  });
+  const confirmDoiTrangThai = (kh: KhachHang) => {
+    toggleTrangThai(kh);
   };
 
-  const toggleTrangThai = (id: string) => {
-    setKhachHangs(prev => prev.map(kh => 
-      kh._id === id 
-        ? { ...kh, trangThai: kh.trangThai === 'HOAT_DONG' ? 'NGUNG_GIAO_DICH' : 'HOAT_DONG' }
-        : kh
-    ));
-  };
+  const columns = [
+    {
+      title: "Mã",
+      dataIndex: "maKhachHang",
+      render: (v: string) => <code>{v}</code>,
+    },
+    {
+      title: "Tên khách hàng",
+      dataIndex: "tenKhachHang",
+    },
+    {
+      title: "Số điện thoại",
+      dataIndex: "soDienThoai",
+    },
+    {
+      title: "Công nợ",
+      dataIndex: "congNoHienTai",
+      align: "right" as const,
+      render: (v: number) => (
+        <span style={{ color: v > 0 ? "#dc2626" : "#16a34a", fontWeight: 600 }}>
+          {formatCurrency(v)}
+        </span>
+      ),
+    },
+    {
+      title: "Trạng thái",
+      align: "center" as const,
+      render: (_: any, kh: KhachHang) => (
+        <Popconfirm
+          title={
+            kh.trangThai === "HOAT_DONG"
+              ? "Xác nhận ngừng giao dịch khách hàng này?"
+              : "Xác nhận mở lại giao dịch khách hàng?"
+          }
+          okText="Xác nhận"
+          cancelText="Hủy"
+          onConfirm={() => confirmDoiTrangThai(kh)}
+        >
+          <Tag
+            color={kh.trangThai === "HOAT_DONG" ? "green" : "red"}
+            style={{ cursor: "pointer" }}
+          >
+            {kh.trangThai === "HOAT_DONG" ? "Hoạt động" : "Ngừng GD"}
+          </Tag>
+        </Popconfirm>
+      ),
+    },
+    {
+      title: "Thao tác",
+      align: "center" as const,
+      render: (_: any, kh: KhachHang) => (
+        <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+          <AntButton size="small" onClick={() => openEdit(kh)}>
+            <Pencil size={14} />
+          </AntButton>
 
-  const filteredKhachHangs = khachHangs.filter(kh =>
-    kh.tenKhachHang.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    kh.maKhachHang.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    kh.soDienThoai.includes(searchTerm)
-  );
+          <Popconfirm
+            title="Xác nhận xóa?"
+            okText="Xóa"
+            cancelText="Hủy"
+            okButtonProps={{ danger: true }}
+            onConfirm={async () => {
+              try {
+                const res: any = await khachHangService.xoa(kh._id);
+                message.success(res?.message || "Xóa khách hàng thành công");
+                loadData();
+              } catch (err: any) {
+                message.error(err);
+              }
+            }}
+          >
+            <AntButton danger size="small">
+              <Trash2 size={14} />
+            </AntButton>
+          </Popconfirm>
+        </div>
+      ),
+    },
+  ];
 
+  /* ===================== RENDER ===================== */
   return (
     <div className="min-h-screen">
-      <AdminHeader title="Khách hàng" subtitle="Quản lý danh sách khách hàng và công nợ" />
+      <AdminHeader
+        title="Khách hàng"
+        subtitle="Quản lý khách hàng và công nợ"
+      />
 
-      <div className="p-4 lg:p-6">
-        {/* Action bar */}
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-primary" />
-              <span className="text-muted-foreground">{khachHangs.length} khách hàng</span>
-            </div>
-            <Input
-              placeholder="Tìm kiếm..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full sm:w-64"
-            />
-          </div>
-          <Button onClick={openAddDialog} className="gap-2 w-full sm:w-auto">
-            <Plus className="h-4 w-4" />
+      <div style={{ padding: 24 }}>
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 12,
+            marginBottom: 16,
+          }}
+        >
+          <Input.Search
+            placeholder="Tìm kiếm..."
+            allowClear
+            onChange={(e) => setSearch(e.target.value)}
+            style={{ width: 260 }}
+          />
+
+          <AntButton icon={<RefreshCw size={14} />} onClick={loadData} />
+
+          <AntButton type="primary" icon={<Plus size={14} />} onClick={openAdd}>
             Thêm khách hàng
-          </Button>
+          </AntButton>
         </div>
 
-        {/* Desktop Table */}
-        <div className="hidden md:block admin-card overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="table-header border-b border-border">
-                <th className="px-6 py-4 text-left">Mã</th>
-                <th className="px-6 py-4 text-left">Tên khách hàng</th>
-                <th className="px-6 py-4 text-left">Liên hệ</th>
-                <th className="px-6 py-4 text-right">Công nợ</th>
-                <th className="px-6 py-4 text-center">Trạng thái</th>
-                <th className="px-6 py-4 text-center">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredKhachHangs.map((kh) => (
-                <tr key={kh._id} className="table-row-hover border-b border-border last:border-0">
-                  <td className="px-6 py-4 font-medium">{kh.maKhachHang}</td>
-                  <td className="px-6 py-4">
-                    <p className="font-medium">{kh.tenKhachHang}</p>
-                    <p className="text-sm text-muted-foreground flex items-center gap-1">
-                      <MapPin className="h-3 w-3" />
-                      {kh.diaChi}
-                    </p>
-                  </td>
-                  <td className="px-6 py-4 text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Phone className="h-4 w-4" />
-                      {kh.soDienThoai}
+        {/* DESKTOP */}
+        {!isMobile && (
+          <Table
+            rowKey="_id"
+            loading={loading}
+            columns={columns}
+            dataSource={filteredData}
+            pagination={{ pageSize: 10 }}
+          />
+        )}
+
+        {/* MOBILE */}
+        {isMobile && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {filteredData.map((kh) => (
+              <Card
+                key={kh._id}
+                size="small"
+                title={
+                  <div
+                    style={{ display: "flex", justifyContent: "space-between" }}
+                  >
+                    <div>
+                      <div style={{ fontWeight: 600 }}>{kh.tenKhachHang}</div>
+                      <div style={{ fontSize: 12, color: "#888" }}>
+                        {kh.maKhachHang}
+                      </div>
                     </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <span className={kh.congNoHienTai > 0 ? 'font-semibold text-destructive' : 'text-success'}>
+                    <Tag
+                      color={kh.trangThai === "HOAT_DONG" ? "green" : "red"}
+                      onClick={() => toggleTrangThai(kh)}
+                      style={{ cursor: "pointer" }}
+                    >
+                      {kh.trangThai === "HOAT_DONG" ? "Hoạt động" : "Ngừng"}
+                    </Tag>
+                  </div>
+                }
+              >
+                <div style={{ lineHeight: 1.8 }}>
+                  <div>📞 {kh.soDienThoai || "-"}</div>
+                  <div>📍 {kh.diaChi || "-"}</div>
+                  <div>
+                    <strong>Công nợ: </strong>
+                    <span
+                      style={{
+                        color: kh.congNoHienTai > 0 ? "#dc2626" : "#16a34a",
+                      }}
+                    >
                       {formatCurrency(kh.congNoHienTai)}
                     </span>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <button
-                      onClick={() => toggleTrangThai(kh._id)}
-                      className={kh.trangThai === 'HOAT_DONG' ? 'badge-success' : 'badge-danger'}
-                    >
-                      {kh.trangThai === 'HOAT_DONG' ? 'Hoạt động' : 'Ngừng GD'}
-                    </button>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center justify-center gap-2">
-                      <Button variant="ghost" size="icon" onClick={() => openEditDialog(kh)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => { setDeletingId(kh._id); setIsDeleteDialogOpen(true); }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </div>
+                </div>
 
-        {/* Mobile Cards */}
-        <div className="md:hidden space-y-3">
-          {filteredKhachHangs.map((kh) => (
-            <div key={kh._id} className="rounded-lg border bg-card p-4 space-y-3">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="font-semibold">{kh.tenKhachHang}</p>
-                  <p className="text-sm text-muted-foreground">{kh.maKhachHang}</p>
-                </div>
-                <button
-                  onClick={() => toggleTrangThai(kh._id)}
-                  className={kh.trangThai === 'HOAT_DONG' ? 'badge-success' : 'badge-danger'}
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    gap: 8,
+                    marginTop: 12,
+                  }}
                 >
-                  {kh.trangThai === 'HOAT_DONG' ? 'Hoạt động' : 'Ngừng'}
-                </button>
-              </div>
-              <div className="text-sm space-y-1">
-                <p className="flex items-center gap-2 text-muted-foreground">
-                  <Phone className="h-4 w-4" />
-                  {kh.soDienThoai}
-                </p>
-                <p className="flex items-center gap-2 text-muted-foreground">
-                  <MapPin className="h-4 w-4" />
-                  <span className="line-clamp-1">{kh.diaChi}</span>
-                </p>
-              </div>
-              <div className="flex items-center justify-between pt-2 border-t">
-                <div>
-                  <p className="text-sm text-muted-foreground">Công nợ</p>
-                  <p className={`font-semibold ${kh.congNoHienTai > 0 ? 'text-destructive' : 'text-success'}`}>
-                    {formatCurrency(kh.congNoHienTai)}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => openEditDialog(kh)}>
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-destructive hover:text-destructive"
-                    onClick={() => { setDeletingId(kh._id); setIsDeleteDialogOpen(true); }}
+                  <AntButton size="small" onClick={() => openEdit(kh)}>
+                    <Pencil size={14} />
+                  </AntButton>
+
+                  <Popconfirm
+                    title="Xác nhận xóa?"
+                    okText="Xóa"
+                    cancelText="Hủy"
+                    okButtonProps={{ danger: true }}
+                    onConfirm={async () => {
+                      try {
+                        const res: any = await khachHangService.xoa(kh._id);
+                        message.success(
+                          res?.message || "Xóa khách hàng thành công"
+                        );
+                        loadData();
+                      } catch (err: any) {
+                        message.error(err);
+                      }
+                    }}
                   >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                    <AntButton danger size="small">
+                      <Trash2 size={14} />
+                    </AntButton>
+                  </Popconfirm>
                 </div>
-              </div>
-            </div>
-          ))}
-        </div>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Add/Edit Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="bg-card">
-          <DialogHeader>
-            <DialogTitle>{editingKhachHang ? 'Sửa khách hàng' : 'Thêm khách hàng mới'}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Mã khách hàng</label>
-              <Input value={form.maKhachHang} disabled className="bg-muted" />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Tên khách hàng *</label>
-              <Input
-                value={form.tenKhachHang}
-                onChange={(e) => setForm(prev => ({ ...prev, tenKhachHang: e.target.value }))}
-                placeholder="Nhập tên khách hàng"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Số điện thoại</label>
-              <Input
-                value={form.soDienThoai}
-                onChange={(e) => setForm(prev => ({ ...prev, soDienThoai: e.target.value }))}
-                placeholder="Nhập số điện thoại"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Địa chỉ</label>
-              <Input
-                value={form.diaChi}
-                onChange={(e) => setForm(prev => ({ ...prev, diaChi: e.target.value }))}
-                placeholder="Nhập địa chỉ"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Hủy</Button>
-            <Button onClick={handleSave}>{editingKhachHang ? 'Cập nhật' : 'Thêm mới'}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent className="bg-card">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Xác nhận xóa?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Hành động này không thể hoàn tác. Khách hàng sẽ bị xóa vĩnh viễn.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Hủy</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Xóa
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* MODAL FORM */}
+      <Modal
+        open={isModalOpen}
+        title={editing ? "Sửa khách hàng" : "Thêm khách hàng"}
+        onCancel={() => setIsModalOpen(false)}
+        onOk={handleSave}
+        confirmLoading={saving}
+        okText={editing ? "Cập nhật" : "Thêm mới"}
+        cancelText="Hủy"
+      >
+        <Form form={form} layout="vertical">
+          <Form.Item
+            label="Tên khách hàng"
+            name="tenKhachHang"
+            rules={[
+              { required: true, message: "Vui lòng nhập tên khách hàng" },
+            ]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            label="Số điện thoại"
+            name="soDienThoai"
+            rules={[{ required: true, message: "Vui lòng nhập số điện thoại" }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            label="Địa chỉ"
+            name="diaChi"
+            rules={[{ required: true, message: "Vui lòng nhập địa chỉ" }]}
+          >
+            <Input />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };
