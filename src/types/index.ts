@@ -32,6 +32,8 @@ export type SanPham = {
   maSanPham: string;
   tenSanPham: string;
   kichThuoc: string;
+  hinhAnh: string;
+  moTa: string;
   giaBanMacDinh: number;
   hienThi: boolean;
   nhaMayId: {
@@ -59,7 +61,7 @@ export interface HoaDon {
   khachHangId: string;
   diaChiGiao: string;
   chiTiet: ChiTietHoaDon[];
-  tongTien: number;
+  tongTienHoaDon: number;
   daThu: number;
   conNo: number;
   trangThai: TrangThaiHoaDon;
@@ -130,7 +132,7 @@ export interface DashboardTongQuan {
   tongSanPham: number;
   tongKhachHang: number;
   tongNhaMay: number;
-  hoaDonThangNay: number;
+  hoaDonHienTai: number;
   tongCongNo: number;
   phanTram: {
     sanPham: number;

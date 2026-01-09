@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { HoaDon } from "@/types";
 import axiosClient from "./axiosClient";
 
@@ -8,7 +9,7 @@ export const hoaDonService = {
   chiTiet(id: string): Promise<{ data: HoaDon }> {
     return axiosClient.get(`/hoa-don/${id}`);
   },
-  tao(payload: Partial<HoaDon>) {
+  tao(payload: Partial<HoaDon> | any) {
     return axiosClient.post("/hoa-don", payload);
   },
 };

@@ -14,6 +14,8 @@ import KhachHang from "./pages/admin/KhachHang";
 import SanPham from "./pages/admin/SanPham";
 import HoaDon from "./pages/admin/HoaDon";
 import ChuyenCho from "./pages/admin/ChuyenCho";
+import LichSuThuTien from "./pages/admin/LichSuThuTien";
+import LichSuCongNo from "./pages/admin/LichSuCongNo";
 
 const queryClient = new QueryClient();
 
@@ -26,8 +28,6 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
-            
-            {/* Admin Routes */}
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<Dashboard />} />
               <Route path="nha-may" element={<NhaMay />} />
@@ -35,10 +35,10 @@ const App = () => (
               <Route path="khach-hang" element={<KhachHang />} />
               <Route path="hoa-don" element={<HoaDon />} />
               <Route path="thu-tien" element={<ThuTien />} />
+              <Route path="lich-su-thu-tien" element={<LichSuThuTien />} />
+              <Route path="lich-su-cong-no" element={<LichSuCongNo />} />
               <Route path="chuyen-cho" element={<ChuyenCho />} />
             </Route>
-
-            {/* Catch-all */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

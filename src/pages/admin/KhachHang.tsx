@@ -256,17 +256,24 @@ const KhachHangPage = () => {
                   >
                     <div>
                       <div style={{ fontWeight: 600 }}>{kh.tenKhachHang}</div>
-                      <div style={{ fontSize: 12, color: "#888" }}>
-                        {kh.maKhachHang}
-                      </div>
                     </div>
-                    <Tag
-                      color={kh.trangThai === "HOAT_DONG" ? "green" : "red"}
-                      onClick={() => toggleTrangThai(kh)}
-                      style={{ cursor: "pointer" }}
+                    <Popconfirm
+                      title={
+                        kh.trangThai === "HOAT_DONG"
+                          ? "Xác nhận ngừng giao dịch khách hàng này?"
+                          : "Xác nhận mở lại giao dịch khách hàng?"
+                      }
+                      okText="Xác nhận"
+                      cancelText="Hủy"
+                      onConfirm={() => toggleTrangThai(kh)}
                     >
-                      {kh.trangThai === "HOAT_DONG" ? "Hoạt động" : "Ngừng"}
-                    </Tag>
+                      <Tag
+                        color={kh.trangThai === "HOAT_DONG" ? "green" : "red"}
+                        style={{ cursor: "pointer" }}
+                      >
+                        {kh.trangThai === "HOAT_DONG" ? "Hoạt động" : "Ngừng"}
+                      </Tag>
+                    </Popconfirm>
                   </div>
                 }
               >

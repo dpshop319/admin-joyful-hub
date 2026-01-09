@@ -1,98 +1,108 @@
-import { LucideIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { LucideIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface StatCardProps {
   title: string;
   value: string | number;
   icon: LucideIcon;
   trend?: {
-    value: number;
-    isPositive: boolean;
+    value: number; // % từ BE
+    isPositive: boolean; // giữ để tương thích
+    label?: string; // vd: so với hôm qua
   };
-  variant?: 'default' | 'primary' | 'success' | 'warning' | 'info';
+  variant?: "default" | "primary" | "success" | "warning" | "info";
   className?: string;
 }
 
 const variantStyles = {
   default: {
-    card: 'bg-card border border-border',
-    icon: 'bg-primary/10 text-primary',
-    text: 'text-foreground',
-    subtext: 'text-muted-foreground',
+    card: "bg-card border border-border",
+    icon: "bg-primary/10 text-primary",
+    text: "text-foreground",
+    subtext: "text-muted-foreground",
   },
   primary: {
-    card: 'bg-gradient-to-br from-primary to-primary/80 text-white border-0',
-    icon: 'bg-white/20 text-white',
-    text: 'text-white',
-    subtext: 'text-white/80',
+    card: "bg-card border border-border",
+    icon: "bg-primary/10 text-primary",
+    text: "text-foreground",
+    subtext: "text-muted-foreground",
   },
   success: {
-    card: 'bg-gradient-to-br from-success to-success/80 text-white border-0',
-    icon: 'bg-white/20 text-white',
-    text: 'text-white',
-    subtext: 'text-white/80',
+    card: "bg-card border border-border",
+    icon: "bg-success/10 text-success",
+    text: "text-foreground",
+    subtext: "text-muted-foreground",
   },
   warning: {
-    card: 'bg-gradient-to-br from-warning to-warning/80 text-white border-0',
-    icon: 'bg-white/20 text-white',
-    text: 'text-white',
-    subtext: 'text-white/80',
+    card: "bg-card border border-border",
+    icon: "bg-warning/10 text-warning",
+    text: "text-foreground",
+    subtext: "text-muted-foreground",
   },
   info: {
-    card: 'bg-gradient-to-br from-info to-info/80 text-white border-0',
-    icon: 'bg-white/20 text-white',
-    text: 'text-white',
-    subtext: 'text-white/80',
+    card: "bg-card border border-border",
+    icon: "bg-info/10 text-info",
+    text: "text-foreground",
+    subtext: "text-muted-foreground",
   },
 };
 
-const StatCard = ({ title, value, icon: Icon, trend, variant = 'default', className }: StatCardProps) => {
+const StatCard = ({
+  title,
+  value,
+  icon: Icon,
+  trend,
+  variant = "default",
+  className,
+}: StatCardProps) => {
   const styles = variantStyles[variant];
 
   return (
     <div
       className={cn(
-        'rounded-xl p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 animate-fade-in',
+        "rounded-xl p-6 transition-shadow hover:shadow-md",
         styles.card,
         className
       )}
     >
       <div className="flex items-start justify-between">
-        <div className="space-y-2">
-          <p className={cn('text-sm font-medium', styles.subtext)}>
-            {title}
-          </p>
-          <p className={cn('text-2xl lg:text-3xl font-bold tracking-tight', styles.text)}>
-            {value}
-          </p>
+        <div className="space-y-1.5">
+          <p className={cn("text-sm font-medium", styles.subtext)}>{title}</p>
+
+          <p className={cn("text-2xl font-semibold", styles.text)}>{value}</p>
+
           {trend && (
-            <p
-              className={cn(
-                'text-sm font-medium flex items-center gap-1',
-                variant === 'default' 
-                  ? (trend.isPositive ? 'text-success' : 'text-destructive')
-                  : styles.subtext
-              )}
-            >
-              <span className={cn(
-                'inline-flex items-center justify-center w-5 h-5 rounded-full text-xs',
-                variant === 'default'
-                  ? (trend.isPositive ? 'bg-success/10' : 'bg-destructive/10')
-                  : 'bg-white/20'
-              )}>
-                {trend.isPositive ? '↑' : '↓'}
+            <p className="text-sm flex items-center gap-1">
+              <span
+                className={cn(
+                  trend.value < 0 ? "text-destructive" : "text-success"
+                )}
+              >
+                {trend.value < 0 ? "↓" : "↑"}
               </span>
-              {Math.abs(trend.value)}% so với tháng trước
+
+              <span
+                className={cn(
+                  trend.value < 0 ? "text-destructive" : "text-success"
+                )}
+              >
+                {Math.abs(trend.value)}%
+              </span>
+
+              <span className={styles.subtext}>
+                {trend.label || "so với tháng trước"}
+              </span>
             </p>
           )}
         </div>
+
         <div
           className={cn(
-            'flex h-14 w-14 items-center justify-center rounded-xl',
+            "flex h-12 w-12 items-center justify-center rounded-lg",
             styles.icon
           )}
         >
-          <Icon className="h-7 w-7" />
+          <Icon className="h-6 w-6" />
         </div>
       </div>
     </div>

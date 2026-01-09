@@ -97,12 +97,17 @@ const NhaMayPage = () => {
     }
   };
 
-  /* ================= TOGGLE ================= */
   const toggleHopTac = async (nm: NhaMay) => {
     try {
       const res: any = await nhaMayService.toggleHopTac(nm._id);
       message.success(res.message);
-      loadData();
+      setNhaMays((prev) =>
+        prev.map((item) =>
+          item._id === nm._id
+            ? { ...item, dangHoatDong: !item.dangHoatDong }
+            : item
+        )
+      );
     } catch (err: any) {
       message.error(err?.response?.data?.message || "Không thể cập nhật");
     }
