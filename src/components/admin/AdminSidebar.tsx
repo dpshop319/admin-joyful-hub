@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   Factory,
@@ -9,18 +9,21 @@ import {
   Truck,
   LogOut,
   Sparkles,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import ThemeToggle from './ThemeToggle';
+  History,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import ThemeToggle from "./ThemeToggle";
 
 const menuItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
-  { icon: Factory, label: 'Nhà máy', path: '/admin/nha-may' },
-  { icon: Package, label: 'Sản phẩm', path: '/admin/san-pham' },
-  { icon: Users, label: 'Khách hàng', path: '/admin/khach-hang' },
-  { icon: FileText, label: 'Hóa đơn', path: '/admin/hoa-don' },
-  { icon: Wallet, label: 'Thu tiền', path: '/admin/thu-tien' },
-  { icon: Truck, label: 'Chuyến chở', path: '/admin/chuyen-cho' },
+  { icon: LayoutDashboard, label: "Dashboard", path: "/admin" },
+  { icon: Factory, label: "Nhà máy", path: "/admin/nha-may" },
+  { icon: Package, label: "Sản phẩm", path: "/admin/san-pham" },
+  { icon: Users, label: "Khách hàng", path: "/admin/khach-hang" },
+  { icon: FileText, label: "Hóa đơn", path: "/admin/hoa-don" },
+  { icon: Wallet, label: "Thu tiền", path: "/admin/thu-tien" },
+  { icon: History, label: "Lich sử thu tiền", path: "/admin/lich-su-thu-tien" },
+  { icon: History, label: "Lich sử công nợ", path: "/admin/lich-su-cong-no" },
+  { icon: Truck, label: "Chuyến chở", path: "/admin/chuyen-cho" },
 ];
 
 interface AdminSidebarProps {
@@ -31,8 +34,8 @@ const AdminSidebar = ({ onNavigate }: AdminSidebarProps) => {
   const location = useLocation();
 
   const isActive = (path: string) => {
-    if (path === '/admin') {
-      return location.pathname === '/admin';
+    if (path === "/admin") {
+      return location.pathname === "/admin";
     }
     return location.pathname.startsWith(path);
   };
@@ -49,7 +52,9 @@ const AdminSidebar = ({ onNavigate }: AdminSidebarProps) => {
             <h1 className="text-xl font-bold text-sidebar-foreground tracking-tight">
               Gạch Việt
             </h1>
-            <p className="text-xs text-sidebar-foreground/60 font-medium">Quản trị hệ thống</p>
+            <p className="text-xs text-sidebar-foreground/60 font-medium">
+              Quản trị hệ thống
+            </p>
           </div>
         </div>
       </div>
@@ -62,17 +67,17 @@ const AdminSidebar = ({ onNavigate }: AdminSidebarProps) => {
         {menuItems.map((item, index) => {
           const Icon = item.icon;
           const active = isActive(item.path);
-          
+
           return (
             <Link
               key={item.path}
               to={item.path}
               onClick={onNavigate}
               className={cn(
-                'flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200',
+                "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200",
                 active
-                  ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-lg shadow-sidebar-primary/25'
-                  : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'
+                  ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg shadow-sidebar-primary/25"
+                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
               )}
               style={{ animationDelay: `${index * 50}ms` }}
             >
@@ -88,10 +93,6 @@ const AdminSidebar = ({ onNavigate }: AdminSidebarProps) => {
 
       {/* Footer */}
       <div className="border-t border-sidebar-border p-4 space-y-2">
-        <div className="flex items-center justify-between px-4 py-2 rounded-lg bg-sidebar-accent/50">
-          <span className="text-sm text-sidebar-foreground/70 font-medium">Giao diện</span>
-          <ThemeToggle />
-        </div>
         <button className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-sidebar-foreground/70 transition-all hover:bg-destructive/10 hover:text-destructive">
           <LogOut className="h-5 w-5" />
           Đăng xuất

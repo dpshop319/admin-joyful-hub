@@ -1,42 +1,58 @@
-import { useState, useMemo } from 'react';
-import AdminHeader from '@/components/admin/AdminHeader';
-import { Button } from '@/components/ui/button';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useMemo, useEffect } from "react";
+import AdminHeader from "@/components/admin/AdminHeader";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
-import { 
-  getKhachHangHoatDong, 
-  getHoaDonConNoByKhachHang 
-} from '@/data/mockData';
-import { formatCurrency, formatDate, parseCurrency, formatNumber, generateMaPhieuThu } from '@/utils/format';
-import { KhachHang, HoaDon, PhanBoHoaDon } from '@/types';
-import { Wallet, CheckCircle, AlertCircle, Info } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  formatCurrency,
+  formatDate,
+  parseCurrency,
+  formatNumber,
+  generateMaPhieuThu,
+} from "@/utils/format";
+import { KhachHang, HoaDon, PhanBoHoaDon } from "@/types";
+import { Wallet, CheckCircle, AlertCircle, Info } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { khachHangService } from "@/services/khachHang.service";
+import { hoaDonService } from "@/services/hoaDon.service";
+import { phieuThuService } from "@/services/phieuThu.service";
 
 const ThuTien = () => {
   const { toast } = useToast();
-  const [selectedKhachHang, setSelectedKhachHang] = useState<KhachHang | null>(null);
+  const [selectedKhachHang, setSelectedKhachHang] = useState<KhachHang | null>(
+    null
+  );
   const [hoaDonConNo, setHoaDonConNo] = useState<HoaDon[]>([]);
   const [phanBo, setPhanBo] = useState<Record<string, number>>({});
-  const [selectedHoaDons, setSelectedHoaDons] = useState<Set<string>>(new Set());
-  const [ghiChu, setGhiChu] = useState('');
+  const [selectedHoaDons, setSelectedHoaDons] = useState<Set<string>>(
+    new Set()
+  );
+  const [ghiChu, setGhiChu] = useState("");
+  const [khachHangs, setKhachHangs] = useState<KhachHang[]>([]);
+  const [priceTotal, setPriceTotal] = useState<number>(0);
 
-  const khachHangList = getKhachHangHoatDong();
-
+  const loadKhachHangs = async () => {
+    const res = await khachHangService.danhSach();
+    setKhachHangs(res.data.filter((k) => k.trangThai === "HOAT_DONG"));
+  };
+  useEffect(() => {
+    loadKhachHangs();
+  }, []);
   // Khi chọn khách hàng
-  const handleSelectKhachHang = (khachHangId: string) => {
-    const kh = khachHangList.find(k => k._id === khachHangId);
+  const handleSelectKhachHang = async (khachHangId: string) => {
+    const kh = khachHangs.find((k) => k._id === khachHangId);
     setSelectedKhachHang(kh || null);
-    
     if (kh) {
-      const hoaDons = getHoaDonConNoByKhachHang(khachHangId);
-      setHoaDonConNo(hoaDons);
+      const hoaDons = await hoaDonService.danhSach({ khachHangId });
+      setHoaDonConNo(hoaDons.data.filter((hd) => hd.conNo !== 0));
       // Reset phân bổ
       setPhanBo({});
       setSelectedHoaDons(new Set());
@@ -47,107 +63,72 @@ const ThuTien = () => {
     }
   };
 
-  // Toggle chọn hóa đơn
-  const toggleHoaDon = (hoaDonId: string) => {
-    const newSelected = new Set(selectedHoaDons);
-    if (newSelected.has(hoaDonId)) {
-      newSelected.delete(hoaDonId);
-      // Xóa phân bổ
-      const newPhanBo = { ...phanBo };
-      delete newPhanBo[hoaDonId];
-      setPhanBo(newPhanBo);
-    } else {
-      newSelected.add(hoaDonId);
-    }
-    setSelectedHoaDons(newSelected);
-  };
-
-  // Cập nhật số tiền phân bổ
-  const updatePhanBo = (hoaDonId: string, value: string) => {
-    const hoaDon = hoaDonConNo.find(hd => hd._id === hoaDonId);
-    if (!hoaDon) return;
-
-    let soTien = parseCurrency(value);
-    // Không cho nhập quá còn nợ
-    if (soTien > hoaDon.conNo) {
-      soTien = hoaDon.conNo;
-    }
-
-    setPhanBo(prev => ({
-      ...prev,
-      [hoaDonId]: soTien,
-    }));
-  };
-
-  // Tính tổng tiền thu
-  const tongTienThu = useMemo(() => {
-    return Object.values(phanBo).reduce((sum, val) => sum + val, 0);
-  }, [phanBo]);
-
-  // Xác nhận thu tiền
-  const handleXacNhan = () => {
+  const handleXacNhan = async () => {
     if (!selectedKhachHang) {
       toast({
-        variant: 'destructive',
-        title: 'Lỗi',
-        description: 'Vui lòng chọn khách hàng',
+        variant: "destructive",
+        title: "Lỗi",
+        description: "Vui lòng chọn khách hàng",
       });
       return;
     }
 
-    if (tongTienThu === 0) {
+    if (priceTotal === 0) {
       toast({
-        variant: 'destructive',
-        title: 'Lỗi',
-        description: 'Vui lòng nhập số tiền thu',
+        variant: "destructive",
+        title: "Lỗi",
+        description: "Vui lòng nhập số tiền thu",
       });
       return;
     }
-
-    // Tạo dữ liệu phiếu thu
-    const phanBoHoaDons: PhanBoHoaDon[] = [];
-    selectedHoaDons.forEach(hdId => {
-      const hd = hoaDonConNo.find(h => h._id === hdId);
-      const soTien = phanBo[hdId] || 0;
-      if (hd && soTien > 0) {
-        phanBoHoaDons.push({
-          hoaDonId: hdId,
-          maHoaDon: hd.maHoaDon,
-          conNo: hd.conNo,
-          soTienThu: soTien,
-        });
-      }
-    });
-
-    const phieuThu = {
+    // 2️⃣ Payload gửi backend
+    const payload: any = {
       maPhieuThu: generateMaPhieuThu(),
       khachHangId: selectedKhachHang._id,
-      ngayThu: new Date().toISOString().split('T')[0],
-      soTienThu: tongTienThu,
-      phanBoHoaDons,
+      ngayThu: new Date().toISOString().split("T")[0],
+      soTienThu: priceTotal,
       ghiChu,
     };
 
-    // TODO: Gọi API POST /api/phieu-thu
-    console.log('Phiếu thu:', phieuThu);
+    try {
+      await phieuThuService.tao(payload);
+      toast({
+        title: "Thành công!",
+        description: `Đã tạo phiếu thu ${payload.maPhieuThu} - ${formatCurrency(
+          priceTotal
+        )}`,
+      });
 
-    toast({
-      title: 'Thành công!',
-      description: `Đã tạo phiếu thu ${phieuThu.maPhieuThu} - ${formatCurrency(tongTienThu)}`,
-    });
-
-    // Reset form
-    setSelectedKhachHang(null);
-    setHoaDonConNo([]);
-    setPhanBo({});
-    setSelectedHoaDons(new Set());
-    setGhiChu('');
+      // 4️⃣ Reset form
+      setSelectedKhachHang(null);
+      setHoaDonConNo([]);
+      setPhanBo({});
+      setSelectedHoaDons(new Set());
+      setGhiChu("");
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description:
+          error?.response?.data?.message || "Không thể tạo phiếu thu",
+      });
+    }
   };
+
+  const congNoSauThu = useMemo(() => {
+    if (!selectedKhachHang) return 0;
+    return Math.max(selectedKhachHang.congNoHienTai - priceTotal, 0);
+  }, [selectedKhachHang, priceTotal]);
+
+  const isInvalid =
+    !selectedKhachHang ||
+    priceTotal <= 0 ||
+    priceTotal > (selectedKhachHang?.congNoHienTai || 0);
 
   return (
     <div className="min-h-screen">
-      <AdminHeader 
-        title="Thu tiền" 
+      <AdminHeader
+        title="Thu tiền"
         subtitle="Tạo phiếu thu và phân bổ thanh toán cho hóa đơn"
       />
 
@@ -171,7 +152,7 @@ const ThuTien = () => {
                     <SelectValue placeholder="Chọn khách hàng..." />
                   </SelectTrigger>
                   <SelectContent className="bg-popover">
-                    {khachHangList.map((kh) => (
+                    {khachHangs.map((kh) => (
                       <SelectItem key={kh._id} value={kh._id}>
                         <div className="flex items-center justify-between gap-4">
                           <span>{kh.tenKhachHang}</span>
@@ -190,7 +171,9 @@ const ThuTien = () => {
                 <div className="rounded-lg bg-muted/50 p-4 animate-fade-in">
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                     <div>
-                      <p className="font-medium">{selectedKhachHang.tenKhachHang}</p>
+                      <p className="font-medium">
+                        {selectedKhachHang.tenKhachHang}
+                      </p>
                       <p className="text-sm text-muted-foreground">
                         {selectedKhachHang.soDienThoai}
                       </p>
@@ -199,7 +182,9 @@ const ThuTien = () => {
                       </p>
                     </div>
                     <div className="sm:text-right">
-                      <p className="text-sm text-muted-foreground">Công nợ hiện tại</p>
+                      <p className="text-sm text-muted-foreground">
+                        Công nợ hiện tại
+                      </p>
                       <p className="text-xl font-bold text-destructive">
                         {formatCurrency(selectedKhachHang.congNoHienTai)}
                       </p>
@@ -233,58 +218,42 @@ const ThuTien = () => {
                         <table className="w-full">
                           <thead>
                             <tr className="table-header border-b border-border">
-                              <th className="w-12 px-4 py-3"></th>
-                              <th className="px-4 py-3 text-left">Mã hóa đơn</th>
+                              <th className="px-4 py-3 text-left">
+                                Mã hóa đơn
+                              </th>
                               <th className="px-4 py-3 text-left">Ngày giao</th>
-                              <th className="px-4 py-3 text-right">Tổng tiền</th>
+                              <th className="px-4 py-3 text-right">
+                                Tổng tiền
+                              </th>
                               <th className="px-4 py-3 text-right">Đã thu</th>
                               <th className="px-4 py-3 text-right">Còn nợ</th>
-                              <th className="w-48 px-4 py-3 text-right">Thu lần này</th>
                             </tr>
                           </thead>
                           <tbody>
                             {hoaDonConNo.map((hd) => {
                               const isSelected = selectedHoaDons.has(hd._id);
                               const soTienDaNhap = phanBo[hd._id] || 0;
-
                               return (
                                 <tr
                                   key={hd._id}
                                   className={`table-row-hover border-b border-border last:border-0 ${
-                                    isSelected ? 'bg-primary/5' : ''
+                                    isSelected ? "bg-primary/5" : ""
                                   }`}
                                 >
-                                  <td className="px-4 py-3 text-center">
-                                    <Checkbox
-                                      checked={isSelected}
-                                      onCheckedChange={() => toggleHoaDon(hd._id)}
-                                    />
+                                  <td className="px-4 py-3 font-medium">
+                                    {hd.maHoaDon}
                                   </td>
-                                  <td className="px-4 py-3 font-medium">{hd.maHoaDon}</td>
                                   <td className="px-4 py-3 text-muted-foreground">
                                     {formatDate(hd.ngayGiao)}
                                   </td>
                                   <td className="px-4 py-3 text-right">
-                                    {formatCurrency(hd.tongTien)}
+                                    {formatCurrency(hd.tongTienHoaDon)}
                                   </td>
                                   <td className="px-4 py-3 text-right text-success">
                                     {formatCurrency(hd.daThu)}
                                   </td>
                                   <td className="px-4 py-3 text-right font-medium text-destructive">
                                     {formatCurrency(hd.conNo)}
-                                  </td>
-                                  <td className="px-4 py-3">
-                                    {isSelected ? (
-                                      <Input
-                                        type="text"
-                                        value={soTienDaNhap > 0 ? formatNumber(soTienDaNhap) : ''}
-                                        onChange={(e) => updatePhanBo(hd._id, e.target.value)}
-                                        placeholder="Nhập số tiền"
-                                        className="input-currency text-right"
-                                      />
-                                    ) : (
-                                      <div className="h-10" />
-                                    )}
                                   </td>
                                 </tr>
                               );
@@ -303,51 +272,127 @@ const ThuTien = () => {
                             <div
                               key={hd._id}
                               className={`rounded-lg border p-4 space-y-3 ${
-                                isSelected ? 'bg-primary/5 border-primary/30' : 'bg-card'
+                                isSelected
+                                  ? "bg-primary/5 border-primary/30"
+                                  : "bg-card"
                               }`}
                             >
                               <div className="flex items-start gap-3">
-                                <Checkbox
-                                  checked={isSelected}
-                                  onCheckedChange={() => toggleHoaDon(hd._id)}
-                                  className="mt-1"
-                                />
                                 <div className="flex-1">
                                   <div className="flex items-start justify-between">
                                     <div>
-                                      <p className="font-semibold">{hd.maHoaDon}</p>
-                                      <p className="text-sm text-muted-foreground">{formatDate(hd.ngayGiao)}</p>
+                                      <p className="font-semibold">
+                                        {hd.maHoaDon}
+                                      </p>
+                                      <p className="text-sm text-muted-foreground">
+                                        {formatDate(hd.ngayGiao)}
+                                      </p>
                                     </div>
-                                    <p className="font-medium text-destructive">{formatCurrency(hd.conNo)}</p>
+                                    <p className="font-medium text-destructive">
+                                      {formatCurrency(hd.conNo)}
+                                    </p>
                                   </div>
                                   <div className="grid grid-cols-2 gap-2 mt-2 text-sm">
                                     <div>
-                                      <span className="text-muted-foreground">Tổng: </span>
-                                      <span className="font-medium">{formatCurrency(hd.tongTien)}</span>
+                                      <span className="text-muted-foreground">
+                                        Tổng:
+                                      </span>
+                                      <span className="font-medium">
+                                        {formatCurrency(hd.tongTienHoaDon)}
+                                      </span>
                                     </div>
                                     <div className="text-right">
-                                      <span className="text-muted-foreground">Đã thu: </span>
-                                      <span className="font-medium text-green-600">{formatCurrency(hd.daThu)}</span>
+                                      <span className="text-muted-foreground">
+                                        Đã thu:{" "}
+                                      </span>
+                                      <span className="font-medium text-green-600">
+                                        {formatCurrency(hd.daThu)}
+                                      </span>
                                     </div>
                                   </div>
-                                  {isSelected && (
-                                    <div className="mt-3 pt-3 border-t">
-                                      <label className="text-sm font-medium mb-1 block">Thu lần này</label>
-                                      <Input
-                                        type="text"
-                                        value={soTienDaNhap > 0 ? formatNumber(soTienDaNhap) : ''}
-                                        onChange={(e) => updatePhanBo(hd._id, e.target.value)}
-                                        placeholder="Nhập số tiền"
-                                        className="input-currency text-right"
-                                      />
-                                    </div>
-                                  )}
                                 </div>
                               </div>
                             </div>
                           );
                         })}
                       </div>
+
+                      {selectedKhachHang && (
+                        <div className="rounded-xl border bg-muted/40 p-6 space-y-4">
+                          <div className="flex items-center gap-2">
+                            <Wallet className="w-5 h-5 text-primary" />
+                            <h3 className="text-lg font-semibold">
+                              Nhập số tiền thu
+                            </h3>
+                          </div>
+                          <Input
+                            type="number"
+                            min={0}
+                            max={selectedKhachHang?.congNoHienTai || 0}
+                            value={priceTotal || ""}
+                            onChange={(e) => {
+                              let value = Number(e.target.value);
+                              if (!selectedKhachHang) {
+                                setPriceTotal(0);
+                                return;
+                              }
+                              if (value < 0) value = 0;
+                              if (value > selectedKhachHang.congNoHienTai) {
+                                value = selectedKhachHang.congNoHienTai;
+                              }
+                              setPriceTotal(value);
+                            }}
+                            placeholder={`Tối đa ${formatCurrency(
+                              selectedKhachHang?.congNoHienTai || 0
+                            )}`}
+                            className="h-12 text-lg font-semibold text-right"
+                          />
+
+                          <div className="grid grid-cols-3 gap-4 text-sm">
+                            <div>
+                              <div className="text-muted-foreground">
+                                Công nợ trước
+                              </div>
+                              <div className="font-semibold">
+                                {formatCurrency(
+                                  selectedKhachHang.congNoHienTai
+                                )}
+                              </div>
+                            </div>
+
+                            <div>
+                              <div className="text-muted-foreground">
+                                Thu lần này
+                              </div>
+                              <div className="font-semibold text-primary">
+                                {formatCurrency(priceTotal)}
+                              </div>
+                            </div>
+
+                            <div>
+                              <div className="text-muted-foreground">
+                                Công nợ sau
+                              </div>
+                              <div
+                                className={`font-semibold ${
+                                  congNoSauThu > 0
+                                    ? "text-destructive"
+                                    : "text-green-600"
+                                }`}
+                              >
+                                {formatCurrency(congNoSauThu)}
+                              </div>
+                            </div>
+                          </div>
+
+                          {isInvalid && (
+                            <div className="flex items-center gap-2 text-sm text-red-600">
+                              <AlertCircle className="w-4 h-4" />
+                              Số tiền thu không hợp lệ
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
@@ -356,7 +401,9 @@ const ThuTien = () => {
               {/* Ghi chú */}
               {selectedKhachHang && hoaDonConNo.length > 0 && (
                 <div className="space-y-2 animate-fade-in">
-                  <label className="text-sm font-medium">Ghi chú (tùy chọn)</label>
+                  <label className="text-sm font-medium">
+                    Ghi chú (tùy chọn)
+                  </label>
                   <Input
                     type="text"
                     value={ghiChu}
@@ -370,9 +417,11 @@ const ThuTien = () => {
               {selectedKhachHang && hoaDonConNo.length > 0 && (
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-lg bg-muted/50 p-4 animate-fade-in">
                   <div>
-                    <p className="text-sm text-muted-foreground">Tổng tiền thu</p>
+                    <p className="text-sm text-muted-foreground">
+                      Tổng tiền thu
+                    </p>
                     <p className="text-2xl font-bold text-primary">
-                      {formatCurrency(tongTienThu)}
+                      {formatCurrency(priceTotal)}
                     </p>
                   </div>
                   <div className="flex gap-3">
@@ -384,18 +433,20 @@ const ThuTien = () => {
                         setHoaDonConNo([]);
                         setPhanBo({});
                         setSelectedHoaDons(new Set());
-                        setGhiChu('');
+                        setGhiChu("");
                       }}
                     >
                       Hủy
                     </Button>
                     <Button
                       onClick={handleXacNhan}
-                      disabled={tongTienThu === 0}
+                      disabled={!selectedKhachHang || priceTotal <= 0}
                       className="gap-2 flex-1 sm:flex-none"
                     >
                       <CheckCircle className="h-4 w-4" />
-                      <span className="hidden sm:inline">Xác nhận thu tiền</span>
+                      <span className="hidden sm:inline">
+                        Xác nhận thu tiền
+                      </span>
                       <span className="sm:hidden">Xác nhận</span>
                     </Button>
                   </div>

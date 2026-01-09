@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export interface ApiResponse<T> {
   success: boolean;
   message?: string;
@@ -32,6 +33,8 @@ export type SanPham = {
   maSanPham: string;
   tenSanPham: string;
   kichThuoc: string;
+  hinhAnh: string;
+  moTa: string;
   giaBanMacDinh: number;
   hienThi: boolean;
   nhaMayId: {
@@ -56,10 +59,10 @@ export interface HoaDon {
   ngayLap?: string;
   ngayGiao: string;
   nhaMayId: string;
-  khachHangId: string;
+  khachHangId: any;
   diaChiGiao: string;
   chiTiet: ChiTietHoaDon[];
-  tongTien: number;
+  tongTienHoaDon: number;
   daThu: number;
   conNo: number;
   trangThai: TrangThaiHoaDon;
@@ -130,12 +133,16 @@ export interface DashboardTongQuan {
   tongSanPham: number;
   tongKhachHang: number;
   tongNhaMay: number;
-  hoaDonThangNay: number;
+  hoaDonHienTai: number;
+  tongDoanhThu: number;
+  tongDaThu: number;
   tongCongNo: number;
   phanTram: {
     sanPham: number;
     khachHang: number;
     hoaDon: number;
+    doanhThu: number;
+    daThu: number;
     congNo: number;
   };
   hoaDonCanThu: HoaDonCanThu[];
